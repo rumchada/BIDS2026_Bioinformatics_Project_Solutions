@@ -1,0 +1,639 @@
+---
+title: "Project_1_Analysis"
+output: html_document
+---
+
+# Library Read-In
+
+```{r, include =FALSE}
+library(tidyverse)
+library(devtools)
+library(vroom)
+library(GEOquery)
+library(biomaRt)
+library(dplyr)
+library(org.Hs.eg.db)
+library(DESeq2)
+library(clusterProfiler)
+library(RNAseqQC)
+library(bulkanalysis)
+#source("Project_1_function_lab.R")
+```
+
+# Reading in the files
+
+### GSE202805 Info
+
+tissue: pbmc
+
+**80 Samples:**
+
+**Platform:** Illumina HiSeq 4000 (Homo sapiens)
+
+**Case Groups:** 4 acute-Mild, 6 Acute Moderate, 32 Acute-Severe, 28 Covalescent
+
+**Control Groups:** 10 healthy controls
+
+### **GSE227116 Info**
+
+tissue: pbmc
+
+65 blood Samples recoved form 46 COVID-19 convalescent patients and 10 healthy donors were analyzed by RNA- Sequencing
+
+**Platform:** Illumina HiSeq 2500 (Homo sapiens)
+
+10 healthy donors, 65 blood samples.
+
+### GSE161731 Info
+
+tissue: pbmc
+
+Illumina NovaSeq 6000 (Homo sapiens)
+
+46 individuals with PCR positive, sympomatic COVID-19, 14 were sampled at multiple time points
+
+(early ≤10 days, middle 11-21 days, late \>21 days)
+
+**Categorical severity of Healthy and COVID-19 patients**
+
+59 = acute respiratory infection
+
+17 = Influenza
+
+20 = bacterial pneumonia
+
+19 = healthy controls
+
+Baseline Profiling: Intra-Dataset Comparison
+
+```{r}
+covid19_ds1 <- readRDS("./post_processed_data/gse202805_covid19_ds1.rds")
+
+covid19_ds2 <- readRDS("./post_processed_data/gse152641_covid19_ds2.rds")
+
+covid19_ds3 <- readRDS("./post_processed_data/gse161731_covid19_ds3.rds")
+
+covid19_ds4 <- readRDS("./post_processed_data/gse227116_covid19_ds4.rds")
+
+covid19_ds5 <- readRDS("./post_processed_data/gse152418_covid19_ds5.rds")
+```
+
+#### QC Plots on raw count matrix
+
+typing a qc function plain without arguments gives you the actual ggplot 2 function: neat
+
+**Library Size:** the total number of counts for each sample
+
+Ideally we should see a level distribution between each of samples within the same level of magnitude.
+
+## Library Size
+
+Size distribution is typical and normal for all three. However DS2 and DS3 are right skewed with out of range samples. Outlier samples that exceed the magnitude of the second IQR can indicate that there was PCR Over amplification and too many duplicate reads. If we samples low, then those have low counts. Then those have around 5 to 10 million reads and are usually excluded. DS3 has a few, but overall all three dataset should that there that most the samples are within range to avoid batch effects.
+
+```{r}
+plot_total_counts(covid19_ds1) +
+  labs(title = "gse202805 / COVID-19 DS1 library sizes") 
+  
+  
+plot_total_counts(covid19_ds2) + 
+  labs(title = "gse152641 / COVID-19 DS2 library sizes")
+
+plot_total_counts(covid19_ds3) +
+  labs(title = "gse161713 / COVID-19 DS3 library sizes")
+
+plot_total_counts(covid19_ds4) + 
+  labs(title = "gse227116 / COVID-19 DS4 library sizes")
+
+plot_total_counts(covid19_ds5) + 
+  labs(title = "gse152418 / COVID-19 DS5 library sizes")
+```
+
+## Library Complexity
+
+Library Complexity: the fraction of counts that are taken up by what fraction of genes.
+
+This helps us to assess transcriptional diversity. Ideally, a high quality library should have read distributed across a broad range of gene rather than being dominated by a select few
+
+GSE20285:
+
+Starting with major outlier on the left, this shows us that 50% of counts within that sample contains less than 0.01.% of the genes within the homo-sapien reference genome used fro alignment. This what is known as low complexity sample/library. This would mean that very little known genes probably around 100 out of thousands are being seen within the total amounts of reads within that sample.
+
+Our main cluster of libraries: Looks like we have a healthy amount of variation across all libraries. For almost all of the samples, 50% of the counts account for the first 10% of the reads and flatten out around the 50% of genes at 95% of the counts within the majority of the libraries.
+
+A general rule for grading library complexity is to find the intersection at 50% of the reads counted.
+
+```{r}
+plot_library_complexity(covid19_ds1) +
+  labs(title = "gse202805 / COVID-19 DS1 library complexity") 
+  
+plot_library_complexity(covid19_ds2) + 
+  labs(title = "gse152641 / COVID-19 DS2 library complexity")
+
+
+plot_library_complexity(covid19_ds3) +
+  labs(title = "gse161713 / COVID-19 DS3 library complexity")
+
+plot_library_complexity(covid19_ds4) + 
+  labs(title = "gse227116 / COVID-19 DS4 library complexity")
+
+plot_library_complexity(covid19_ds5) +
+   labs(title = "gse152418 / COVID-19 DS5 library sizes")
+```
+
+**Library complexity is only one component of sequencing saturation. It is also dependent on the sequencing depth: the total number of reads the machine produced per sample**
+
+This is different from **sequencing saturation:** the measure of the fraction of library complexity that was sequenced in a given experiment.
+
+Low Saturation: You have unique molecules in your sample that sequencer hasn't yet seen. Adding more reads will increase the number of genes you detect
+
+High Saturation: You have already sequenced almost ever molecule in the library multiple time. Adding more reads will only produce duplicates
+
+Your Saturation limit can also vary depending on the cell types you're profiling (<https://kb.10xgenomics.com/s/article/115005062366-What-is-sequencing-saturation>)
+
+## **Gene Detection**
+
+```{r}
+plot_gene_detection
+plot_gene_detection(covid19_ds1) +
+  labs(title = "gse202805 / COVID-19 DS1 gene detection") 
+  
+plot_gene_detection(covid19_ds2) + 
+  labs(title = "gse227116 / COVID-19 DS2 gene detection")
+
+plot_gene_detection(covid19_ds4) + 
+  labs(title = "gse152641 / COVID-19 DS3 gene detection")
+
+plot_gene_detection(covid19_ds5) +
+     labs(title = "gse152418 / COVID-19 DS5 library sizes")
+```
+
+## Boxplot of Normalized Counts (Pre-Filtering)
+
+```{r}
+log_norm_cnts <- covid19_ds1@assays@data$log_counts
+
+metadata <- covid19_ds1@colData
+
+# 1. Create the diagnostic table base
+#calculating the average
+diagnostic_table <- data.frame(
+  average_zero_cnt = colMeans(log_norm_cnts == 0)
+)
+
+# 2. Process strings and metadata
+diagnostic_table <- diagnostic_table %>%
+  tibble::rownames_to_column("sample_info") %>%
+  tidyr::separate(sample_info, into = c("sample", "condition"), sep = "_(?=[^_]+$)") %>%
+  
+  # Replacing variations of condition names to covid19
+  dplyr::mutate(condition = ifelse(
+    grepl("(COVID-19$|COVID19$)", condition, ignore.case = TRUE),
+    "covid19",
+    condition
+  )) %>%
+  
+  # FIX: Corrected typo from 'mutat' to 'mutate'
+  dplyr::mutate(condition = ifelse(
+    grepl("Healthy", condition, ignore.case = TRUE),
+    "healthy",
+    condition
+  )) %>% 
+  
+  # Note: Assumes shared_metadata alignment matches diagnostic_table row order
+  dplyr::mutate(condition = as.factor(metadata))
+
+# 3. Create the boxplot
+boxplot_zero_cnt <- diagnostic_table %>%
+  ggplot(aes(x = condition, y = average_zero_cnt, fill = condition)) +
+  geom_boxplot() +
+  ylab("mean_zero_cnt_per_sample")
+
+# Display plot
+boxplot_zero_cnt
+```
+
+## **DimReduction Section for Intra-DataSet Profiling**
+
+Euclidean Distance
+
+```{r}
+baseline_dimreduction(covid19_ds1)
+baseline_dimreduction(covid19_ds2)
+baseline_dimreduction(covid19_ds3)
+baseline_dimreduction(covid19_ds4)
+baseline_dimreduction(covid19_ds5)
+```
+
+**Answering the Question:**
+
+**What does a Batch effect look like in practice?**
+
+Batch effects are technical variations within the data that can be introduced via technical errors in practice. When applying statistical models they can mistake this technical variation for biological variaiton. (Confounding variables) For example: sample extraction time and date, two seperate technician extracting RNA from the same set of samples, Switching to a new RNA extracting kit due to reagent loss or scarcity, and equipment configurations.
+
+TLDR; systemic technical shifts within the data.
+
+**Are there are any batch effects within the datasets?**
+
+Only COVID_19 dataset 3 has specific sequencing batch meta_data.
+
+Batch effects usually appear within the PCs. We do not know if the variance captured within a PC is due to a biological effect or technical effect between other variables like, age, sex, patient type.
+
+When you first look at the PCA, you don't know. But by cross-referencing the PC scores with your metadata using statistical tests (ANOVA/Regression), you *can* find out exactly which effect is dominating that PC.
+
+**Measuring degree of batch effects;**
+
+Can we capture possible batch effect within a datasets and the magnitude of that batch effect? Essentially, we see which co_variate correlates strongly with a principal component, independent of the experimental condition?
+
+The purpose of this is to check health of the dataset. Are there any variables within the data and meta_data that account for the variation and thus confounds the principal component
+
+**Why is this so important?**
+
+When performing differential expression analysis, we are only handed a list of DEG with a degree of change in the form of log2FC. In spatial and sc transcriptomics, we also have percentage of group 1 and percentage of group 2 (pct.1, and pct.2), but that is irrelevant to the bulk resolution.
+
+If we look closely to our DEGs we want to be certain we are capturing the biologically relevant DEGs rather than housekeeping gene or structural RNA genes
+
+Ultimately the goal of batch correction is scientific replicalbility and synchronization.
+
+PC_variance Association not hard Variance Decomposition
+
+```{r}
+covid19_ds1@colData[] <- lapply(covid19_ds1@colData, factor)
+covid19_ds2@colData[] <- lapply(covid19_ds2@colData, factor)
+covid19_ds3@colData[] <- lapply(covid19_ds3@colData, factor)
+covid19_ds4@colData[] <- lapply(covid19_ds4@colData, factor)
+covid19_ds5@colData[] <- lapply(covid19_ds5@colData, factor)
+
+```
+
+```{r}
+covid19_ds1@colData
+covid19_ds2@colData
+```
+
+```{r}
+pc_var_association(covid19_ds1) # 20280
+pc_var_association(covid19_ds2) # 152641
+pc_var_association(covid19_ds3) # 161731
+pc_var_association(covid19_ds4) # 227116
+pc_var_association(covid19_ds5) # 152418
+```
+
+Results. Accounting for Batch Effects within a dataset result:
+
+Principal Variance Component Analysis.
+
+<https://www.niehs.nih.gov/research/resources/software/biostatistics/pvca>
+
+Method:
+
+For each meta_variable and top variable genes' PC, perfrom a statitical test that will tell us the the correlation between that variable and the top variable genes'
+
+Should be able to see Via PCA for the Specific Samples.
+
+For the sake brevity lets reduce it doiwn to the healthy and COVID-19 samples
+
+# Harmonizing the DataSets
+
+#### Standardizing Datasets
+
+```{r}
+# Adding DataSet Moniceurs
+colData(covid19_ds1)$ds_origin <- "GSE202805"
+colData(covid19_ds2)$ds_origin <- "GSE152641"
+colData(covid19_ds3)$ds_origin <- "GSE161731"
+colData(covid19_ds4)$ds_origin <- "GSE227116"
+colData(covid19_ds5)$ds_origin <- "GSE152418"
+```
+
+```{r}
+unique(as.data.frame(covid19_ds1@colData)$condition)
+unique(as.data.frame(covid19_ds2@colData)$condition) 
+unique(as.data.frame(covid19_ds3@colData)$condition)
+unique(as.data.frame(covid19_ds4@colData)$condition)
+unique(as.data.frame(covid19_ds5@colData)$condition)
+```
+
+At this point ended up replacing GSE22116 with GSE152641 because of disease state homogeneity and switching a cleaning the meta_data is a hassle
+
+### Standardize sample names in meta_data
+
+```{r}
+covid19_ds1@colData$condition <- covid19_ds1@colData$condition %>% tolower()
+covid19_ds2@colData$condition <- covid19_ds2@colData$condition %>% tolower()
+covid19_ds3@colData$condition <- covid19_ds3@colData$condition %>% tolower() %>% gsub("covid-19", "covid19", .) %>% gsub(" ", "_", .) %>% as.factor()
+
+covid19_ds4@colData$condition <- covid19_ds4@colData$condition %>% tolower()
+
+covid19_ds5@colData$condition <- covid19_ds5@colData$condition %>% tolower() %>% gsub("-", "",.)
+
+covid19_ds1@colData[] <- lapply(covid19_ds1@colData, factor)
+covid19_ds2@colData[] <- lapply(covid19_ds2@colData, factor)
+covid19_ds3@colData[] <- lapply(covid19_ds3@colData, factor)
+covid19_ds4@colData[] <- lapply(covid19_ds4@colData, factor)
+covid19_ds5@colData[] <- lapply(covid19_ds5@colData, factor)
+
+
+
+unique(as.data.frame(covid19_ds1@colData)$condition)
+unique(as.data.frame(covid19_ds2@colData)$condition) 
+unique(as.data.frame(covid19_ds3@colData)$condition)
+unique(as.data.frame(covid19_ds4@colData)$condition)
+unique(as.data.frame(covid19_ds5@colData)$condition)
+```
+
+```{r}
+saveRDS(covid19_ds1, "./post_processed_data/gse202805_covid19_ds1.rds")
+saveRDS(covid19_ds2, "./post_processed_data/gse152641_covid19_ds2.rds")
+saveRDS(covid19_ds3, "./post_processed_data/gse161731_covid19_ds3.rds")
+saveRDS(covid19_ds4, "./post_processed_data/gse227116_covid19_ds4.rds")
+saveRDS(covid19_ds5, "./post_processed_data/gse152418_covid19_ds5.rds")
+```
+
+### Subsetting for shared genes IDs within each object
+
+```{r}
+common_genes <- Reduce(intersect, list(
+  rownames(covid19_ds1), 
+  rownames(covid19_ds2),
+  rownames(covid19_ds3),
+  rownames(covid19_ds4), 
+  rownames(covid19_ds5)))
+
+
+covid_ds1_shared <- covid19_ds1[common_genes, ]
+covid_ds2_shared <- covid19_ds2[common_genes, ]
+covid_ds3_shared <- covid19_ds3[common_genes, ]
+covid_ds4_shared <- covid19_ds4[common_genes, ]
+covid_ds5_shared <- covid19_ds5[common_genes, ]
+
+
+counts_table_one <- counts(covid_ds1_shared , normalized = FALSE) # GSE202805
+counts_table_two <- counts(covid_ds2_shared , normalized = FALSE) # "GSE152641"
+counts_table_three <- counts(covid_ds3_shared, normalized = FALSE) # "GSE161731"
+counts_table_four <- counts(covid_ds4_shared , normalized = FALSE) # "GSE227116"
+counts_table_five <- counts(covid_ds5_shared, normalized = FALSE) # "GSE152418"
+
+
+shared_counts <- cbind(counts_table_one, counts_table_two, counts_table_three, counts_table_four, counts_table_five)
+
+
+```
+
+### Filtering Low counts in the combined Dataset via counts in individual Datasets
+
+```{r}
+meta1 <- as.data.frame(colData(covid19_ds1))
+meta2 <- as.data.frame(colData(covid19_ds2))
+meta3 <- as.data.frame(colData(covid19_ds3))
+meta4 <- as.data.frame(colData(covid19_ds4))
+meta5 <- as.data.frame(colData(covid19_ds5))
+```
+
+```{r}
+meta_data_stnrd <- function(df) {
+  
+  # 1. Handle unified_batch safely
+  # Checks if column exists AND has at least one non-NA value
+  
+  if ("batch_num" %in% colnames(df) && !all(is.na(df$batch_num))) {
+    # If batch_num exists, combine them
+    df$unified_batch <- as.factor(paste0(df$ds_origin, "_B", df$batch_num))
+  } else {
+    
+    df$unified_batch <- as.factor(df$ds_origin)
+  }
+  
+  # 2. Handle time_point (Default to "none" if missing or NA)
+  if (!"time_point" %in% colnames(df)) {
+    df$time_point <- "none"
+  } else {
+    df$time_point[is.na(df$time_point)] <- "none"
+  }
+  
+  # 3. Handle age (Keep true NA, convert to factor only if character)
+  if (!"age" %in% colnames(df)) {
+    df$age <- "na"
+  } else if (is.character(df$age)) {
+    df$age <- as.factor(df$age)
+  }
+  
+  # 4. Handle severity (Ensure character type, keep true NA)
+  if (!"severity" %in% colnames(df)) {
+    df$severity <- "na"
+  } else {
+    df$severity <- as.character(df$severity)
+  }
+  
+  return(df)
+}
+
+meta1 <- meta_data_stnrd(meta1)
+meta2 <- meta_data_stnrd(meta2)
+meta3 <- meta_data_stnrd(meta3)
+meta4 <- meta_data_stnrd(meta4)
+meta5 <- meta_data_stnrd(meta5)
+
+
+keep_cols <- c("condition", "ds_origin", "time_point", "age", "severity")
+
+
+shared_metadata <- rbind(meta1[, keep_cols, drop=FALSE],
+                        meta2[, keep_cols, drop=FALSE],
+                        meta3[, keep_cols, drop=FALSE],
+                      meta4[, keep_cols, drop=FALSE],
+                      meta5[, keep_cols, drop=FALSE])
+# reording shared meta_data for rownames
+shared_metadata <- shared_metadata[colnames(shared_counts), ]
+shared_metadata <- shared_metadata %>% mutate(time_point = as.factor(time_point),
+                                              condition = as.factor(condition))
+
+```
+
+```{r}
+shared_metadata
+```
+
+### Filtering for Intra-low counts within DataSets
+
+```{r}
+unique_datasets <- unique(shared_metadata$ds_origin)
+
+
+matrix_list <- list()
+
+filter_matrix <- matrix(
+    FALSE,
+    nrow = nrow(shared_counts),
+    ncol = length(unique_datasets),
+    dimnames = list(rownames(shared_counts), unique_datasets)
+)
+
+#subset for a specific Dataset
+# keep this in mind for future subsetting by condition
+#extract the specific colnames that align with columns within the shared count matrix
+for(ds in unique_datasets){
+  
+    #subset into specific data
+    ds_samples <- colnames(shared_counts)[shared_metadata$ds_origin == ds]
+    
+    ds_counts <- shared_counts[, ds_samples, drop = FALSE]
+    print(dim(ds_counts))
+    
+    # genes with at least a total of 3 counts across all three experiments in at least 3 samples
+    passing_counts <- rowSums(ds_counts >= 10) >= 5
+
+    
+   filter_matrix[ ,ds] <- passing_counts
+}
+
+keep_genes <- rowSums(filter_matrix) > 0
+
+
+#keep_samples <- colnames(shared_counts)[
+   # grepl("(_covid19|_healthy|_COVID-19|_Healthy)$",
+      #    colnames(shared_counts))
+#]
+
+filtered_counts <- shared_counts[keep_genes, ]
+dim(filtered_counts)
+
+shared_metadata <- shared_metadata[colnames(filtered_counts), ]
+dim(shared_metadata)
+```
+
+```{r}
+shared_metadata
+```
+
+```{r}
+ncol(shared_counts)
+```
+
+Problem as of Wed May 20th,
+
+We are seeing miss attibution of samples that come from one datase
+
+# New Integrated DataSet Create and normalization
+
+```{r}
+int_ds <- make_dds(filtered_counts, metadata = shared_metadata, ah_record = "AH89426")
+#renaming counts to raw counts
+assayNames(int_ds)[1] <- "counts"
+
+#variance stabilized Raw counts
+assays(int_ds)[[2]] <- vst(int_ds@assays@data$counts)
+assayNames(int_ds)[2] <- "var_stable"
+
+#log_transformed (log normalized counts)
+assays(int_ds)[[3]] <- log10(int_ds@assays@data$counts + 1)
+assayNames(int_ds)[3] <- "log_counts"
+```
+
+### Pre-Batch Correction Diagnosis
+
+```{r}
+bulk_dataset <- int_ds
+grouping <- "ds_origin"
+baseline_dimreduction(bulk_dataset, "ds_origin")
+baseline_dimreduction(bulk_dataset, NA)
+```
+
+```{r}
+pc_var_association(int_ds)
+```
+
+# Batch-Corrections Using Combat-Seq
+
+```{r}
+library(sva)
+adjusted_counts <- ComBat_seq(counts = filtered_counts,
+                              batch = shared_metadata$ds_origin,
+                              group = shared_metadata$condition)
+corrected_int_data <- make_dds(adjusted_counts, metadata = shared_metadata, ah_record = "AH89426")
+#renaming counts to raw counts
+assayNames(corrected_int_data)[1] <- "counts"
+
+#variance stabilized Raw counts
+assays(corrected_int_data)[[2]] <- vst(corrected_int_data@assays@data$counts)
+assayNames(corrected_int_data)[2] <- "var_stable"
+
+#log_transformed (log normalized counts)
+assays(corrected_int_data)[[3]] <- log10(corrected_int_data@assays@data$counts + 1)
+assayNames(corrected_int_data)[3] <- "log_counts"
+```
+
+Manual Memory Management
+
+```{r}
+rm(covid19_ds1, covid19_ds2, covid19_ds3)
+rm(covid_ds1_shared, covid_ds2_shared, covid_ds3_shared)
+rm(meta1, meta2, meta3)
+rm(counts_table_one, counts_table_two, counts_table_three)
+```
+
+```{r}
+bulk_dataset <- corrected_int_data
+grouping <- "ds_origin"
+baseline_dimreduction(bulk_dataset, grouping)
+baseline_dimreduction(bulk_dataset, NA)
+```
+
+```{r}
+pc_var_association(corrected_int_data)
+```
+
+State of the project:
+
+dataset 3 has more than just healthy and covid disease states. It has influenza, bacterial disease in lungs. It's likely these are throwing off the batch correction. I should subset to only covid and healthy disease states
+
+Subset by Disease States leaving only two conditions 'covid19' and healthy\
+
+Checking average_zero inflation per sample per dataset
+
+```{r}
+# 1. Create the diagnostic table base
+diagnostic_table <- data.frame(
+  average_zero_cnt = colMeans(filtered_counts == 0)
+)
+
+# 2. Process strings and metadata
+diagnostic_table <- diagnostic_table %>%
+  tibble::rownames_to_column("sample_info") %>%
+  tidyr::separate(sample_info, into = c("sample", "condition"), sep = "_(?=[^_]+$)") %>%
+  
+  # Replacing variations of condition names to covid19
+  dplyr::mutate(condition = ifelse(
+    grepl("(COVID-19$|COVID19$)", condition, ignore.case = TRUE),
+    "covid19",
+    condition
+  )) %>%
+  
+  # FIX: Corrected typo from 'mutat' to 'mutate'
+  dplyr::mutate(condition = ifelse(
+    grepl("Healthy", condition, ignore.case = TRUE),
+    "healthy",
+    condition
+  )) %>% 
+  
+  # Note: Assumes shared_metadata alignment matches diagnostic_table row order
+  dplyr::mutate(ds_origin = as.factor(shared_metadata$ds_origin))
+
+# 3. Create the boxplot
+boxplot_zero_cnt <- diagnostic_table %>%
+  ggplot(aes(x = ds_origin, y = average_zero_cnt, fill = condition)) +
+  geom_boxplot() +
+  ylab("mean_zero_cnt_per_sample")
+
+# Display plot
+boxplot_zero_cnt
+```
+
+Tried Limma and Manual Batch correction all of them did worse than combat-seq
+
+```{r}
+saveRDS(corrected_int_data,"./post_processed_data/covid_dds_12345.rds")
+```
+
+```{r}
+unique(corrected_int_data@colData$condition)
+```

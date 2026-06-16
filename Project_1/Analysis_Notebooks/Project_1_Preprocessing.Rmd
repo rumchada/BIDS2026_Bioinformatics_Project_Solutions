@@ -17,7 +17,12 @@ library(dplyr)
 library(org.Hs.eg.db)
 library(DESeq2)
 library(clusterProfiler)
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
 library(RNAseqQC)
+```
+
+```{r}
+
 ```
 
 ## Reading in GSE202805 file
@@ -118,7 +123,7 @@ metadata
 
 ```{r}
 # Unflitered Counts Saved to a DeSeqDataSet (dds object)
-covid19_ds1 <- make_dds(counts = counts , metadata = metadata, ah_record = "AH89426")
+covid19_ds1 <- make_dds(counts = counts , metadata = metadata, ah_record = "AH52260")
 #renaming counts to raw counts
 assayNames(covid19_ds1)[1] <- "counts"
 

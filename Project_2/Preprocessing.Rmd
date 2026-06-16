@@ -3,25 +3,6 @@ title: "Preprocessing"
 output: html_document
 ---
 
-# Read in Library
-
-```{r,include =FALSE}
-library(tidyverse)
-library(devtools)
-library(vroom)
-library(GEOquery)
-library(biomaRt)
-library(dplyr)
-library(org.Hs.eg.db)
-library(DESeq2)
-library(clusterProfiler)
-library(RNAseqQC)
-library(bulkanalysis)
-#source("Project_1_function_lab.R")
-```
-
-# Querying for RNA-Seq Dataset
-
 ```{r}
 library(TCGAbiolinks)
 
@@ -32,61 +13,8 @@ query <- GDCquery(
   data.type = "Gene Expression Quantification",
   workflow.type = "STAR - Counts"
 )
-# Primary Tumor: Direct tumor samples
-#Solid Tissue Normal: These patient samples are called "solid tissue normals" and are taken from normal tissues near the tumor
-results <- getResults(query)
-results
 ```
-
-### Acquiring Chosen IDs 
-
 ```{r}
-#stack TCGA
-file_ids <- c("abb04117-9caf-4882-a8fc-80450bdc9446",
-              "95a72aff-106e-4eb3-a897-1629a4b55c55",
-              "1f12acd4-1569-431c-b7b2-448638086ca4")
-
-#Check if those dataset exist within the TCGA-PRAD query
-query_results <- results[results$id %in% file_ids, ]
-data_ids <- query_results$id
-data_ids
-
-data_vector <- list()
-
-for(i in seq_along(data_ids)){
-  
-  barcode <- query_results$cases[i]
-  barcode
-  
-  query_uuid <- GDCquery(
-        project = "TCGA-PRAD",
-        data.category = "Transcriptome Profiling",
-        data.type = "Gene Expression Quantification",
-        barcode = barcode)
-  
-  
-  GDCdownload(query_uuid)
-  
-  se <- GDCprepare(query_uuid)
-  
-  data_vector[[barcode]] <- se
-}
+query
 ```
 
-```{r}
-meta_data <- data_vector$`TCGA-EJ-7123-11A-01R-1965-07`@colData
-```
-
-Gleason score
-
-Pathalogic T stage
-
-PSA level at diagnosis
-
-Biochemical Recurrance status
-
-age_at_index
-
-```{r}
-grepl("diagnosis", colnames(meta_data))
-```

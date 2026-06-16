@@ -16,6 +16,8 @@ baseline_dimreduction <- function(bulk_dataset,
   }
 
 
+
+
   #prioritize variance stable assay within the bulk_dataset
   assays(bulk_dataset) <- assays(bulk_dataset)[c("var_stable", "counts", "log_counts")]
   # takes the euclidan distance of a variance stabilized dataset

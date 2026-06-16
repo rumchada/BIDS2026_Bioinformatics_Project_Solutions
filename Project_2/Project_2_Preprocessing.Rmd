@@ -1,0 +1,626 @@
+---
+title: "Preprocessing"
+output: html_document
+---
+
+# Read in Library
+
+```{r,include =FALSE}
+library(tidyverse)
+library(devtools)
+library(vroom)
+library(GEOquery)
+library(biomaRt)
+library(dplyr)
+library(org.Hs.eg.db)
+library(DESeq2)
+library(clusterProfiler)
+library(RNAseqQC)
+#library(bulkanalysis) # fix this later
+#source("Project_1_function_lab.R") # fix this later
+```
+
+# Querying for RNA-Seq Dataset
+
+### Acquiring Chosen IDs and Filtering for Covariates
+
+Checking meta data for key features
+
+Gleason Score
+
+**Pathologic T Stage:** grades how far the cancer has anatomically spreads within a or beyond the prostate.Pathalogic T stage (pT2 vs. pT3/T4)
+
+PSA level at diagnosis (Common threshold: \<10, 10–20, \>20 ng/mL)
+
+Biochemical Recurrance status (Available as a binary label)
+
+Source of Pathology/Molecular Report: <https://pmc.ncbi.nlm.nih.gov/articles/PMC4695400/#S14>
+
+ajcc_pathologi_t
+
+paper_PSA_preop:
+
+Reviewed_Gleason_sum :
+
+ETV1_status
+
+ETV4_status
+
+FOXA1_mut
+
+Mutations
+
+Fraction_genome_altered
+
+AR_score
+
+# Need justification for each of following Chosen Covariates.
+
+Why would they be meaningful feature that sample embeddings cluster around?
+
+```{r}
+library(openxlsx)
+pathology_path <- "./GDCdata/TCGA_PRAD_pathology.xlsx"
+pathology_metadata <- read.xlsx(pathology_path)
+pathology_metadata
+```
+
+```{r}
+#pathology covariates
+path_cov <- c("SAMPLE_ID", 
+              "PATIENT_ID", 
+              "Age", 
+              "Race", 
+              "Subtype",
+              "Reviewed_Gleason_sum", 
+              "ETV1_status", 
+              "ETV4_status", 
+              "FOXA1_mut", 
+              "Mutations", 
+              "Fraction_genome_altered", 
+              "AR_score",
+              "PSA_preop")
+
+covariates <- c("ajcc_pathologic_t", "gleason_score", "paper_PSA_preop", "paper_AR_score","paper_FOXA1_mut", "paper_ETV1_status", "paper_ETV4_status")
+
+updated_covariates <- c("ajcc_pathologic_t", 
+                        "gleason_score", 
+                        "paper_PSA_preop", 
+                        "paper_AR_score",
+                        "paper_FOXA1_mut", 
+                        "paper_ETV1_status", 
+                        "paper_ETV4_status",
+                        "Mutations",
+                        "Fraction_genome_altered")
+```
+
+```{r}
+# ==========================
+# Clinical covariates
+# ==========================
+
+clinical_covariates <- c(
+  "age_at_diagnosis",
+  "cases",
+  "race",
+  "gender",
+  "paper_PSA_preop"
+)
+
+# ==========================
+# Pathological covariates
+# ==========================
+
+pathological_covariates <- c(
+  "gleason_score",
+  "ajcc_pathologic_t",
+  "ajcc_pathologic_n",
+  "primary_diagnosis",
+  "paper_Residual_tumor",
+  "Subtype"
+)
+
+# ==========================
+# Molecular covariates
+# ==========================
+
+molecular_covariates <- c(
+  "paper_iCluster",
+  "paper_mRNA_cluster",
+  "paper_methylation_cluster",
+
+  "paper_ERG_status",
+  "paper_ETV1_status",
+  "paper_ETV4_status",
+  "paper_SPINK1_high",
+
+  "paper_FOXA1_mut",
+  "paper_SPOP_mut",
+  "paper_TP53_mut",
+  "paper_PTEN_mut",
+
+  "paper_Mutations",
+  "paper_Fraction_genome_altered",
+
+  "paper_ABSOLUTE_purity",
+  "paper_AR_score"
+)
+
+# ==========================
+# Survival variables
+# ==========================
+
+survival_covariates <- c(
+  "vital_status",
+  "days_to_last_follow_up",
+  "cause_of_death"
+)
+
+# ==========================
+# Identifiers
+# ==========================
+
+id_covariates <- c(
+  "PATIENT_ID",
+  "SAMPLE_ID"
+)
+
+# ==========================
+# Complete covariate list
+# ==========================
+
+all_covariates <- c(
+  id_covariates,
+  clinical_covariates,
+  pathological_covariates,
+  molecular_covariates,
+  survival_covariates
+)
+```
+
+Pulling query results for the TCGA-PRAD datasets
+
+```{r}
+library(TCGAbiolinks)
+
+#grab the results query
+#I need the actual data
+query <- GDCquery(
+  project = "TCGA-PRAD",
+  data.category = "Transcriptome Profiling",
+  data.type = "Gene Expression Quantification",
+  workflow.type = "STAR - Counts"
+)
+# Primary Tumor: Direct tumor samples
+#Solid Tissue Normal: These patient samples are called "solid tissue normals" and are taken from normal tissues near the tumor
+results <- getResults(query)
+
+# FIX: extract submitter ID properly
+colnames(results)[colnames(results) == "cases.submitter_id"] <- "PATIENT_ID"
+
+# ensure pathology metadata is filtered correctly
+pathology_metadata <- pathology_metadata %>%
+  dplyr::select(any_of(path_cov))
+
+pathology_metadata
+# join
+merged_meta <- results %>%
+  left_join(pathology_metadata, by = "PATIENT_ID")
+
+merged_meta
+```
+
+```{r}
+#Using 
+clean_df <- merged_meta[complete.cases(merged_meta [, c("PATIENT_ID", "Reviewed_Gleason_sum", "PSA_preop")]), ]
+
+
+# Ending Df samples into 15
+#still results of the results query and not the meta_data the SE object
+clean_df_sample <- clean_df
+clean_df_sample
+
+#Download the 15 samples instead of packing in 554 different DataSets
+barcodes <- clean_df_sample$cases
+
+query_uuid <- GDCquery(
+        project = "TCGA-PRAD",
+        data.category = "Transcriptome Profiling",
+        data.type = "Gene Expression Quantification",
+        barcode = barcodes)
+  
+  
+GDCdownload(query_uuid)
+  
+se <- GDCprepare(query_uuid)
+
+#pulling the metadata from the downloaded tcga datasets
+tcga_coldata <- as.data.frame(colData(se))
+tcga_coldata
+
+
+#rename the tcga_coldat colums to mere with pathology meta_data
+colnames(tcga_coldata)[colnames(tcga_coldata) == "barcode"] <- "cases"
+
+merged_coldata <- left_join(clean_df_sample, tcga_coldata, by = "cases")
+```
+
+```{r}
+library(S4Vectors)
+merged_coldata <- merged_coldata %>% 
+              dplyr::select(any_of(all_covariates)) %>% 
+              tibble::column_to_rownames("cases")
+
+colData(se) <- DataFrame(merged_coldata)
+```
+
+I need to decide what are the essentiall covariates that the sample embeddings of these covariates cluster for.
+
+Right now we have15 datasets, w/ 60600 genes (all types with variant distinctions) and 30 covariates reduced from 150 when downloading the summarized experiment object from the TCGNA PRAD project.
+
+I need to figure out how the sample embeddings of these cluster together. Some clever dimensionality reduction is necessary.
+
+Need to figure out the definitions of the data type for each matrix available in the Summarized Experiment data object.
+
+Normalization in RNA-Seq raw counts: "adjusting gene expression data to account for technical variabilities introduced during sample preparation such as in RNA quantity, quality, and amplfilcation efficiency. Normalization is important to ensure that gene expression data accuralty reflect bioogical differences between samples, rather than technical artifacts.
+
+**What is the data?**
+
+**Unstranded:** Raw counts ignoring strand information
+
+**Stranded_first:** Counts assuming a first-strand (reverse stranded, "-") library
+
+**stranded_second:** counts assuming a second_strand (forward-stranded, "+") library
+
+<https://blog.genewiz.com/stranded-vs-non-stranded-rna-seq>
+
+**fpkm_unstranded:** (Fragments Per Kilobase Million) from unstranded counts
+
+**tpm_unstranded:** (Transcripts Per Million = reads per kilobase per million (RPKM) / fpkm): percentage of RPKM/FPKM calc.
+
+1.  Gene length is normalized first, followed by the normalization of the sequencin depth. Different order of normalizaiton cna have significant impact on results. When using TPM, the sum of the TPMs
+
+fpkm_uq_unstranded: upper quartile normalized FPKRM
+
+<https://www.rna-seqblog.com/rpkm-fpkm-and-tpm-clearly-explained/>
+
+# Dim Reduction Exploration
+
+#Okay learned something new. DDS objects don't accept TPM. \# This is because it's going off of library size expression and not direct relative expression
+
+```{r}
+
+#need to clean up the data that we have
+alt_coldata <- as.data.frame(colData(se)) %>%
+
+  mutate(across(where(~ is.character(.x) | is.factor(.x)),
+                ~ gsub(",", ".", as.character(.x)))) %>%
+
+  mutate(age_at_diagnosis = as.numeric(age_at_diagnosis),
+         paper_PSA_preop = as.numeric(paper_PSA_preop),
+         paper_ABSOLUTE_purity = as.numeric(paper_ABSOLUTE_purity),
+         paper_Fraction_genome_altered = as.numeric(paper_Fraction_genome_altered)
+         ) %>%
+  
+  mutate(
+    paper_AR_score = gsub("%", "", paper_AR_score),
+    paper_AR_score = trimws(paper_AR_score),
+    paper_AR_score = as.numeric(paper_AR_score)
+    ) %>%
+  
+  mutate(age_at_diagnosis =
+           ifelse(age_at_diagnosis > 100,
+                  floor(age_at_diagnosis / 365),
+                  age_at_diagnosis)) %>%
+
+  mutate(across(where(is.character),
+                ~ replace(.x, is.na(.x), "none")))
+
+
+
+alt_coldata
+```
+
+### Altering for Continous and Discrete Variables
+
+```{r}
+#Group Continuous Variables
+alt_coldata$age_group <- cut(
+  alt_coldata$age_at_diagnosis,
+  breaks = c(0, 50, 60, 70, 80, Inf),
+  labels = c("<50", "50-60", "60-70", "70-80", "80+"),
+  include.lowest = TRUE
+)
+
+alt_coldata$PSA_group <- cut(
+  alt_coldata$paper_PSA_preop,
+  breaks = c(0, 5, 10, 15, 20, Inf),
+  labels = c("<5", "5-10", "10-15", "15-20", "20+"),
+  include.lowest = TRUE
+)
+
+alt_coldata$AR_score_group <- cut(
+  alt_coldata$paper_AR_score,
+  breaks = c(-20, -10 ,-5 ,0, 25, 50, 75, 100, Inf),
+  labels = c("-20 - -10","-10 - -5","-5 - 0"," 0-25", "25-50", "50-75", "75-100", "100+"),
+  include.lowest = TRUE
+)
+
+alt_coldata$ABSOLUTE_purity_group <- cut(
+  alt_coldata$paper_ABSOLUTE_purity,
+  breaks = c(0, 0.50, 0.70, 0.85, 1.00),
+  include.lowest = TRUE,
+  labels = c("Low", "Moderate", "High", "Very High")
+)
+
+alt_coldata$FGA_group <- cut(
+  alt_coldata$paper_Fraction_genome_altered,
+  breaks = c(0, 0.25, 0.50, 0.75, 1.00),
+  include.lowest = TRUE,
+  labels = c("0-0.25", "0.25-0.50", "0.50-0.75", "0.75-1.00")
+)
+
+
+
+alt_coldata
+colData(se) <- DataFrame(alt_coldata)
+```
+
+TCGA-PRAD: Project dataformat
+
+m x n matrix where is a column wise samples. m = 60k genes, and n = \# of barcodes/patient/samples requested from the database.
+
+Essentially will be classfiying on the column basis instead of the dataset basis makes sense. I am used to seeing it as an mxn problem not an columun wise column.
+
+Goal is classify each of these into a clinical label.
+
+**Input:** TCGA Transcriptomic data Column, and the x amount of variable included for each of those columns of count data
+
+**Output:** A clinical Label classification based on those effects
+
+**Full Project Question:** Do molecular subtypes defined from transcriptomic data align with clincal classification?
+
+How does molecular sub-typing of PRAD relate to the clinical classification ? How does transcriptomic data it help more or better than the clinical variables that are collected?
+
+What makes PRAD soooo clinically heterogenous: "patients with similar histological grade can have vastly different outcomes"
+
+How does molecular subtyping of PRAD relate to the clinical classification or at least inform clinical classification?
+
+My job:
+
+1.  Perform exploratory dim reduction an clustering for transcriptomic subtypes
+2.  Use those as labels for the data per column/patient/sample
+3.  Build the classifier based on the transcriptomic subtypes
+
+```{r}
+library(convert2anndata)
+library(Seurat)
+```
+
+```{r}
+#transfer the rownames of the sample onto the unstranded matrix
+for (i in seq_along(assays(se))) {
+  
+  mat <- assays(se, withDimnames=FALSE)[[i]]
+  
+  colnames(mat) <- rownames(colData(se))
+  rownames(mat) <- rownames(as.data.frame(rowRanges(se)))
+
+  assays(se)[[i]] <- mat
+  
+}
+
+#Okay learned something new. DDS objects don't accept TPM and Seurat also hates TPM normalized counts.
+# This is because it's going off of library size expression and not direct relative expression
+# Intersting Article about Seurat basics: https://github.com/satijalab/seurat/issues/7496
+```
+
+### Converting SE into h5ad
+
+```{r}
+library(convert2anndata)
+library(anndata)
+```
+
+```{r, include = FALSE}
+ad_path <- "./GDCdata/"
+
+seurat_se <-  CreateSeuratObject(
+  counts = assays(se)[["unstranded"]],
+  meta.data = colData(se)
+  
+)
+#Log noralizing unstranded data
+seurat_se <- NormalizeData(seurat_se)
+seurat_se <- FindVariableFeatures(seurat_se)
+seurat_se <- ScaleData(seurat_se)
+seurat_se <- RunPCA(seurat_se)
+sce <- convert_seurat_to_sce(seurat_se)
+ad <- convert_to_anndata(sce, assayName = "counts", useAltExp = TRUE)
+write_h5ad(ad, paste0(ad_path, "seurat_se.h5ad"))
+
+
+#Unfortunetly I need to create a seperate Seurat Assay
+counts <- assays(se)[["tpm_unstrand"]]
+seurat_se_tpm <- CreateSeuratObject(
+  counts = counts,
+  meta.data = as.data.frame(colData(se))
+)
+seurat_se_tpm <- NormalizeData(seurat_se_tpm, normalization.method = "LogNormalize")
+seurat_se_tpm <- FindVariableFeatures(seurat_se_tpm)
+seurat_se_tpm <- ScaleData(seurat_se_tpm)
+seurat_se_tpm <- RunPCA(seurat_se_tpm)
+
+sce_tpm  <- convert_seurat_to_sce(seurat_se_tpm)
+
+ad_tpm <- convert_to_anndata(sce_tpm, assayName = "counts", useAltExp = TRUE)
+
+write_h5ad(ad_tpm, paste0(ad_path, "seurat_se_tpm.h5ad"))
+```
+
+# **TPM + Log2 Norm + Metadata coloring**
+
+```{r}
+tpm.mat <- se@assays@data$tpm_unstrand
+
+log_tpm <- log2(tpm.mat + 1)
+
+
+  #Select top variable gene
+  top_var_genes <- head(order(rowVars(log_tpm), decreasing = TRUE), 5000)
+  vst_top <- log_tpm[top_var_genes, ]
+  # Run PCA via R
+  # Remember PCA is taking the right unitary martrix (VT) (feature space) of SVD
+  # VT tells us the principal directions of the data set
+  # multiply the the original matrix by the right unitary which is equivalent to the
+  # U time signma (left unitary) * Singular values (Size of the PCs)
+  
+  
+  #PCA on genes
+  pca_res <- prcomp(
+  t(log_tpm[top_var_genes, ]),
+  center = TRUE,
+  scale. = TRUE)
+  
+  pca_df <- data.frame(
+   SAMPLE_ID = colnames(vst_top),
+   PC1= pca_res$x[ ,1],
+   PC2 = pca_res$x[ ,2]
+   )
+  
+ 
+part_df <- as.data.frame(colData(se)) %>% 
+                  dplyr::select(-c("SAMPLE_ID")) %>%
+                  rownames_to_column("SAMPLE_ID")
+
+pca_df <- left_join(pca_df, part_df , by = "SAMPLE_ID")
+
+
+
+vars <- colnames(pca_df)[5:ncol(pca_df)]
+PCA_plots <- list()
+for (v in vars) {
+
+  p <- ggplot(
+    pca_df,
+    aes(PC1, PC2, color = factor(.data[[v]]))
+  ) +
+    geom_point() +
+    ggtitle(glue::glue("PCA space with Var: {v}"))
+
+  PCA_plots[[v]] <- p
+}
+
+
+ # Calculating Percentage of Variance Per PC for the Scree Plot
+  
+  # Calculate percentage variance explained
+  var_explained <- pca_res$sdev^2 / sum(pca_res$sdev^2) * 100
+  
+  # Create a data frame for plotting (first 10 PCs)
+  scree_data <- data.frame(
+    PC = paste0("PC", 1:10),
+    Variance = var_explained[1:10]
+  )
+  scree_data
+  # Ensure PC is treated as a factor in order
+  scree_data$PC <- factor(scree_data$PC, levels = scree_data$PC)
+  
+  # Scree Plot ensures that we are plotting PCs that capture the most amount of variability within our data
+  scree_plot <- ggplot(scree_data, aes(x = PC, y = Variance, group = 1)) +
+    geom_line(color = "red", size = 1) +
+    geom_point(color = "red", size = 2) +
+    labs(title = "Scree Plot: Variance Explained per PC",
+         x = "Principal Component",
+         y = "Percentage of Variance (%)") +
+    theme_minimal()
+
+scree_plot
+```
+
+```{r}
+#Clinical Covariates
+PCA_plots[["age_group"]]
+PCA_plots[["PSA_group"]]
+PCA_plots[["gleason_score"]]
+
+#pathological t
+PCA_plots[["ajcc_pathologic_t"]]
+PCA_plots[["ajcc_pathologic_n"]]
+PCA_plots$Subtype
+
+
+#molecular covariates
+PCA_plots[["paper_ETV1_status"]]
+PCA_plots[["paper_FOXA1_mut"]]
+PCA_plots[["FGA_group"]]
+PCA_plots$paper_mRNA_cluster
+PCA_plots$paper_iCluster
+PCA_plots$AR_score_group
+PCA_plots[["FGA_group"]]
+PCA_plots$paper_ETV1_status
+PCA_plots$paper_TP53_mut
+
+```
+
+# Unstranded Counts + VST + PCA
+
+```{r}
+library(AnnotationHub)
+ah <- AnnotationHub()
+ah[["AH89426"]]
+```
+
+```{r}
+# Unflitered Counts Saved to a DeSeqDataSet (dds object)
+tcgna_prad <- make_dds(counts = se@assays@data$unstranded , metadata = colData(se), ah_record = "AH89426")
+#renaming counts to raw counts
+assayNames(tcgna_prad)[1] <- "counts"
+
+#variance stabilized Raw counts
+assays(tcgna_prad)[[2]] <- vst(tcgna_prad@assays@data$counts)
+assayNames(tcgna_prad)[2] <- "var_stable"
+#log_transformed (log normalized counts)
+assays(tcgna_prad)[[3]] <- log10(tcgna_prad@assays@data$counts + 1)
+assayNames(tcgna_prad)[3] <- "log_counts"
+```
+
+```{r}
+bulk_dataset <- tcgna_prad
+anno_variable <- "gleason_score"
+color_variable <-  "gleason_score"
+#prioritize variance stable assay within the bulk_dataset
+  assays(bulk_dataset) <- assays(bulk_dataset)[c("var_stable", "counts", "log_counts")]
+  # takes the euclidan distance of a variance stabilized dataset
+  # row by row euclidean distance against each other
+  # plots the visual distance between each sample onto heatmap
+  distance_plot <- plot_sample_clustering(bulk_dataset, anno_vars = anno_variable, distance = "euclidean")
+
+
+  #____Extracting Top Variable Gene per sample -----#
+  # Setting Variance Stable Counts as Priority Assay
+  vst_mat <- assay(bulk_dataset, "var_stable")
+  #Select top variable gene
+  top_var_genes <- head(order(rowVars(vst_mat), decreasing = TRUE), 2000)
+  vst_top <- vst_mat[top_var_genes, ]
+  # Run PCA via R
+  # Remember PCA is taking the right unitary martrix (VT) (feature space) of SVD
+  # VT tells us the principal directions of the data set
+  # multiply the the original matrix by the right unitary which is equivalent to the
+  # U time signma (left unitary) * Singular values (Size of the PCs)
+  pca_res <- prcomp(t(vst_top))
+
+
+  # Plotting first two PCAs
+  pca_plot <- plot_pca(bulk_dataset, PC_x = 1, PC_y = 2, color_by = color_variable)
+```
+
+**Checkpoint question:** Do any clinical labels show visible separation in reduced-dimensional space before clustering? What does this suggest about the transcriptomic signal for that variable?
+
+No clincal labels (age_group, PSA_group, gleason_score) or a pathological labels (ajcc_pathologic_t, ajcc_pathologic_n ) show distinct concordance with either the unstanded or the TPM data for TCGA-PRAD only data. The only variables that show close agreement was the miRNA variables: paper_mRNA_cluster and the RNA_Cluster variable: Those that are directly relateted to transcriptomic data.Normal data was not included. This pattern holds for both variance stabilized raw counts and Log Normalized TPM Data.
+
+It suggests that the those variables that show little to now ordered clusterting relative to the transcriptomic signal do not coincide with possible transcriptomic subtypes.
+
+Global PCA does not capture the clinical variance of TCGA-PRAD data.
+
+Converting Summarize Object into AnnData

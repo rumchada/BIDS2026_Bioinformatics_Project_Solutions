@@ -101,7 +101,8 @@ pc_var_association <- function(bulk_ds){
 }
 
 baseline_dimreduction <- function(bulk_dataset, 
-                                  grouping = NA){
+                                  grouping = NA,
+                                  object_type = "dds"){
   
   library(umap)
   library(ggplot2)
@@ -116,14 +117,13 @@ baseline_dimreduction <- function(bulk_dataset,
     anno_variable <- c("condition")
     color_variable <- "condition"
   }
-  
-  
   #prioritize variance stable assay within the bulk_dataset
   assays(bulk_dataset) <- assays(bulk_dataset)[c("var_stable", "counts", "log_counts")]
   # takes the euclidan distance of a variance stabilized dataset
   # row by row euclidean distance against each other
   # plots the visual distance between each sample onto heatmap
   distance_plot <- plot_sample_clustering(bulk_dataset, anno_vars = anno_variable, distance = "euclidean")
+  
   
   
   #____Extracting Top Variable Gene per sample -----#
@@ -140,9 +140,10 @@ baseline_dimreduction <- function(bulk_dataset,
   pca_res <- prcomp(t(vst_top))
   
   
+  
+  
   # Plotting first two PCAs
   pca_plot <- plot_pca(bulk_dataset, PC_x = 1, PC_y = 2, color_by = color_variable)
-  
   
   
   # Calculating Percentage of Variance Per PC for the Scree Plot
