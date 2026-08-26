@@ -13,3 +13,4 @@ Description: Made with functions to assist me with Project 1 of the BIDS 2026 Ha
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
+Config/roxygen2/version: 8.0.0

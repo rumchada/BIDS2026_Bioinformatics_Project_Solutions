@@ -1,3 +1,39 @@
+#' Volcano Plot Visualization
+#'
+#' Uses `ggplot2`, `ggrepel`, and `tidyverse` to construct a volcano
+#' plot from differential expression results.
+#'
+#' @name volcano_plot
+#' @alias volcano_plot
+#'
+#' @param diffexp_df A tibble or data frame containing differential
+#'   expression results. Must contain, at minimum, `p.val_adj` and
+#'   `log2FC` columns.
+#'
+#' @param log2fc_thresh Numeric threshold for the absolute log2 fold-change
+#'   used to identify differentially expressed genes for display.
+#'
+#' @param p.val_adj_thresh Numeric threshold for the adjusted p-value used
+#'   to identify statistically significant differentially expressed genes.
+#'
+#' @param lower_xlim Numeric value specifying the lower limit of the
+#'   x-axis. Should be less than 0. For example, `-5`.
+#'
+#' @param upper_xlim Numeric value specifying the upper limit of the
+#'   x-axis. Should be greater than 0. For example, `5`.
+#'
+#' @param step Numeric value specifying the interval between x-axis ticks.
+#'
+#' @param dot_size Numeric value specifying the size of points in the
+#'   volcano plot.
+#'
+#' @return A list containing:
+#'   \itemize{
+#'     \item `plot`: A ggplot object containing the volcano plot.
+#'     \item `data`: A data frame containing the differential expression
+#'       results used to construct the plot.
+#'   }
+
 
 # Volcano Plot Visualizations
 volcano_plot <- function(diffexp_df,

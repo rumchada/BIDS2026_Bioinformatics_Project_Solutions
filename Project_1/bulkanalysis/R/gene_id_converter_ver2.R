@@ -1,3 +1,45 @@
+#' Gene ID Converter
+#'
+#' Enter the type of conversion from_type and to_type
+#' (e.g. `"ensembl"`, `"entrez"`, `"symbol"`).
+#'
+#' Uses `Bioconductor::getBM()` and `tryCatch()` to communicate with
+#' the Ensembl database via `getBM()` to convert a character vector
+#' of genes into any of the three supported identifier forms.
+#'
+#' @name gene_id_converter_ver2
+#' @aliases gene_id_converter_ver2
+#'
+#' @param vector Character vector of genes.
+#'
+#' @param from_type Character string specifying the initial annotation
+#'   type of the genes. Supported values include `"ensembl"`,
+#'   `"entrez"`, and `"symbol"`.
+#'
+#' @param to_type Character string specifying the desired annotation
+#'   type of the genes. Supported values include `"ensembl"`,
+#'   `"entrez"`, and `"symbol"`.
+#'
+#' @param org_db An organism-specific annotation database used to
+#'   facilitate gene identifier conversion, such as `org.Hs.eg.db`
+#'   or `org.Mm.eg.db`.
+#'
+#' @param ensembl_dataset A character string specifying the Ensembl
+#'   dataset used for annotation. For example,
+#'   `"hsapiens_gene_ensembl"` for human genes.
+#'
+#' @examples
+#' \dontrun{
+#' gene_id_conversion <- gene_id_converter_ver2(
+#'   vector = c("ENSG00000141510", "ENSG00000171862"),
+#'   from_type = "ensembl",
+#'   to_type = "symbol",
+#'   org_db = org.Hs.eg.db,
+#'   ensembl_dataset = "hsapiens_gene_ensembl"
+#' )
+#' }
+
+
 gene_id_converter_ver2 <- function(vector, from_type, to_type, ensembl_datset){
   require(biomaRt)
   # geneid pulling for correct attribute

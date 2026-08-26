@@ -40,15 +40,21 @@ __pycache__/
 *.tmp
 *.temp
 *.rds
+*.Rproj.user
+*.pdf
+*.docx
+*.RDataTmp*
+
 
 
 #images
-.png
-.jpeg
-.pdf
+*.png
+*.jpeg
+*.pdf
 
 # macOS
-.DS_Store
+*.DS_Store
 
 EOF
-.Rproj.user
+*Rproj.user
+
