@@ -1,26 +1,5 @@
 #' Heatmap Visualization
 #'
-#' Visualizes scaled (`z`-scored) log-normalized expression counts
-#' for differentially expressed genes (DEGs) using `ComplexHeatmap`.
-#'
-#' Expression counts are extracted from the supplied DESeq2 object,
-#' log-normalized, and scaled by gene prior to visualization. Genes
-#' identified in the supplied DEG table are used to construct the heatmap.
-#'
-#' The heatmap is configured to perform hierarchical clustering of both
-#' rows and columns. Gene identifiers are not converted within this
-#' function. Gene ID conversion should be performed separately using
-#' `bulkanalysis::gene_id_converter_ver2()`.
-#'
-#' The expression matrix is transformed to log-normalized counts and
-#' subsequently z-scored across genes before visualization. Each row
-#' therefore represents the relative expression pattern of a gene across
-#' samples.
-#'
-#' Rows and columns are hierarchically clustered by default. Gene
-#' identifiers are retained in their original format and are not converted
-#' to external gene names within this function.
-#'
 #' @name heatmap_function
 #' @aliases heatmap_function
 #'
@@ -47,6 +26,28 @@
 #'   `ComplexHeatmap::Heatmap`,
 #'   `bulkanalysis::gene_id_converter_ver2`
 #'
+#'@details
+#' Visualizes scaled (`z`-scored) log-normalized expression counts
+#' for differentially expressed genes (DEGs) using `ComplexHeatmap`.
+#'
+#' Expression counts are extracted from the supplied DESeq2 object,
+#' log-normalized, and scaled by gene prior to visualization. Genes
+#' identified in the supplied DEG table are used to construct the heatmap.
+#'
+#' The heatmap is configured to perform hierarchical clustering of both
+#' rows and columns. Gene identifiers are not converted within this
+#' function. Gene ID conversion should be performed separately using
+#' `bulkanalysis::gene_id_converter_ver2()`.
+#'
+#' The expression matrix is transformed to log-normalized counts and
+#' subsequently z-scored across genes before visualization. Each row
+#' therefore represents the relative expression pattern of a gene across
+#' samples.
+#'
+#' Rows and columns are hierarchically clustered by default. Gene
+#' identifiers are retained in their original format and are not converted
+#' to external gene names within this function.
+#'
 #' @examples
 #' \dontrun{
 #' heatmap <- heatmap_visualization(
@@ -56,7 +57,12 @@
 #' }
 
 
-heatmap_function <- function(initial_table, table_list) {
+heatmap_function <- function(initial_table,
+                             table_list,
+                             #Conversion function arguments
+                             #defaults
+                             ensembl_dataset = "hsapiens_gene_ensembl",
+                             orgdb = org.Hs.eg.db) {
 
   require(colorRamp2)
   require(ComplexHeatmap)

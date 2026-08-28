@@ -4,7 +4,12 @@
 \alias{heatmap_function}
 \title{Heatmap Visualization}
 \usage{
-heatmap_function(initial_table, table_list)
+heatmap_function(
+  initial_table,
+  table_list,
+  ensembl_dataset = "hsapiens_gene_ensembl",
+  orgdb = org.Hs.eg.db
+)
 }
 \arguments{
 \item{initial_table}{A DESeq2 dataset (`DESeqDataSet`) containing
@@ -28,10 +33,12 @@ A `ComplexHeatmap::Heatmap` object displaying the
   scaled log-normalized expression values of the selected DEGs.
 }
 \description{
-Visualizes scaled (`z`-scored) log-normalized expression counts
-for differentially expressed genes (DEGs) using `ComplexHeatmap`.
+Heatmap Visualization
 }
 \details{
+Visualizes scaled (`z`-scored) log-normalized expression counts
+for differentially expressed genes (DEGs) using `ComplexHeatmap`.
+
 Expression counts are extracted from the supplied DESeq2 object,
 log-normalized, and scaled by gene prior to visualization. Genes
 identified in the supplied DEG table are used to construct the heatmap.

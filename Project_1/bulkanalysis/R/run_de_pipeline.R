@@ -1,3 +1,23 @@
+#' @title Run all Downstream analysis pipeline
+#'
+#' @description
+#'
+#'
+#' @param edgeR_results dataframe of log2fc results from edge
+#'
+#' @param deg_log2fc_thresh absolute value cutoff of log2fc
+#'
+#' @param vol_plot_lower_xlim Numeric value specifying the lower limit of the
+#'   x-axis. Should be less than 0. For example, `-5`.
+#'
+#' @param vol_plot_upper_xlim Numeric value specifying the upper limit of the
+#'   x-axis. Should be greater than 0. For example, `5`.
+#'
+#' @param cartesian_step Numeric value specifying the interval between x-axis ticks.
+#'
+#' @param ora_pval_adj_threshold
+#'
+
 
 run_de_pipeline <- function(dds_object,
                             edgeR_results,

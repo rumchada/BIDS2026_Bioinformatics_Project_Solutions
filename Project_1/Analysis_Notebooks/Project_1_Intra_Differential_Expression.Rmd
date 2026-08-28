@@ -24,17 +24,17 @@ library(DESeq2)
 library(clusterProfiler)
 library(RNAseqQC)
 library(edgeR)
-source("Project_1_function_lab.R")
+source("../Project_1_function_lab.R")
 ```
 
 ```{r}
-covid19_ds1 <- readRDS("./post_processed_data/gse202805_covid19_ds1.rds")
-covid19_ds2 <- readRDS("./post_processed_data/gse152641_covid19_ds2.rds")
-covid19_ds3 <- readRDS("./post_processed_data/gse161731_covid19_ds3.rds")
-covid19_ds4 <- readRDS("./post_processed_data/gse227116_covid19_ds4.rds")
-covid19_ds5 <- readRDS("./post_processed_data/gse152418_covid19_ds5.rds")
+covid19_ds1 <- readRDS("../post_processed_data/gse202805_covid19_ds1.rds")
+covid19_ds2 <- readRDS("../post_processed_data/gse152641_covid19_ds2.rds")
+covid19_ds3 <- readRDS("../post_processed_data/gse161731_covid19_ds3.rds")
+covid19_ds4 <- readRDS("../post_processed_data/gse227116_covid19_ds4.rds")
+covid19_ds5 <- readRDS("../post_processed_data/gse152418_covid19_ds5.rds")
 
-covid19_dsint <- readRDS("./post_processed_data/covid_dds_12345.rds")
+covid19_dsint <- readRDS("../post_processed_data/covid_dds_12345.rds")
 
 
 # Adding DataSet Moniceurs
@@ -76,11 +76,37 @@ ref_group_name = "healthy"
 #Performs inital differential expression on your DDS Object's raw counts dataframe
 # The use give the condition column from the metadata to make the test parameters
 # and the control group
-results_dds1 <- edgeR_diffexp(covid19_ds1, condition_col,  ref_group_name)
-results_dds2 <- edgeR_diffexp(covid19_ds2, condition_col, ref_group_name)
-results_dds3 <- edgeR_diffexp(covid19_ds3, condition_col, ref_group_name)
-results_dds4 <- edgeR_diffexp(covid19_ds4, condition_col, ref_group_name)
-results_dds5 <- edgeR_diffexp(covid19_ds5, condition_col, ref_group_name)
+results_dds1 <- edgeR_diffexp(covid19_ds1, 
+                              condition_col,  
+                              ref_group_name,
+                              init_pval_cutoff = 0.5,
+                              adjust.method = "bonferroni")
+
+
+
+results_dds2 <- edgeR_diffexp(covid19_ds2, 
+                              condition_col, 
+                              ref_group_name,
+                              init_pval_cutoff = 0.5,
+                              adjust.method = "bonferroni")
+
+results_dds3 <- edgeR_diffexp(covid19_ds3, 
+                              condition_col, 
+                              ref_group_name,
+                              init_pval_cutoff = 0.5,
+                              adjust.method = "bonferroni")
+
+results_dds4 <- edgeR_diffexp(covid19_ds4, 
+                              condition_col, 
+                              ref_group_name,
+                              init_pval_cutoff = 0.5,
+                              adjust.method = "bonferroni")
+
+results_dds5 <- edgeR_diffexp(covid19_ds5, 
+                              condition_col, 
+                              ref_group_name,
+                              init_pval_cutoff = 0.5,
+                              adjust.method = "bonferroni")
 ```
 
 # **Covid-19 DS1 GSE202805 Downstream Analaysis**
@@ -95,7 +121,8 @@ covid19_ds1_analysis <- run_de_pipeline(
                                         vol_plot_lower_xlim = -10, 
                                         vol_plot_upper_xlim = 10, 
                                         cartesian_step = 5, 
-                                        ora_pval_adj_threshold = 0.05)
+                                        ora_pval_adj_threshold = 0.05
+                                        )
 #saveRDS(covid19_ds1_analysis, "./downstream_results/covid_ds1_gse202805")
 ```
 

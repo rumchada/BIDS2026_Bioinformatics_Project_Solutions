@@ -59,8 +59,8 @@
 edgeR_diffexp <- function(dds_object,
                           condition_col,
                           ref_group_name,
-                          init_pval_cutof = 1,
-                          adjust.method = "bonfferonni") {
+                          init_pval_cutoff = 1,
+                          adjust.method = "bonferroni") {
   require(edgeR)
   #For each condition combination, runs an indepedent differential expression analysis
   #0-Intercept
@@ -106,19 +106,24 @@ edgeR_diffexp <- function(dds_object,
   y <- estimateDisp(y, design)
 
   #fit model once
+  #
   fit <- glmQLFit(y, design)
 
   # run the test for each contrast
   for(i in seq_len(ncol(my.contrasts))) {
 
+    #Performs FTest after model is done to account for multiple comparisons
+    #for each vector contrast
     qlf <- glmQLFTest( fit, contrast = my.contrasts[, i])
 
+
     results[[colnames(my.contrasts)[i]]] <-
-      topTags(qlf, n = nrow(y), p.value = init_pval_cutoff, adjust.method = adjust.method)$table %>%
+      # TopTags function for logFC
+      topTags(qlf, n = nrow(y), p.value = init_pval_cutoff, adjust.method = 'bonferroni')$table %>%
       as.data.frame() %>%
       tibble::rownames_to_column("geneid") %>%
       dplyr::rename_with( ~ "log2foldchange", .cols = "logFC") %>%
-      dplyr::rename_with( ~ "p.val_adj", .cols = dplyr::any_of(c("FWER", "FDR")) )
+      dplyr::rename_with( ~ "p.val_adj", .cols = dplyr::any_of(c("FDR", "FWER")))
   }
 
   return(results)

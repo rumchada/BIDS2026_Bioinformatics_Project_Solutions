@@ -4,7 +4,7 @@
 \alias{gene_id_converter_ver2}
 \title{Gene ID Converter}
 \usage{
-gene_id_converter_ver2(vector, from_type, to_type, ensembl_datset)
+gene_id_converter_ver2(vector, from_type, to_type, org_db, ensembl_datset)
 }
 \arguments{
 \item{vector}{Character vector of genes.}

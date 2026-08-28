@@ -8,8 +8,8 @@ edgeR_diffexp(
   dds_object,
   condition_col,
   ref_group_name,
-  init_pval_cutof = 1,
-  adjust.method = "bonfferonni"
+  init_pval_cutoff = 1,
+  adjust.method = "bonferroni"
 )
 }
 \arguments{

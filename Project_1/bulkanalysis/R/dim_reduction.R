@@ -1,8 +1,77 @@
+#' Baseline Dimension Reduction of RNA-seq Data
+#'
+#' Performs baseline exploratory dimension reduction and sample-level
+#' visualization of a \code{DESeqDataSet}. Variance-stabilized expression
+#' values are used to calculate sample distances and principal components.
+#' The most variable genes are used for PCA and downstream visualization.
+#'
+#' @name baseline_dimreduction
+#' @aliases baseline_dimreduction
+#'
+#' @description
+#' Takes a formatted \code{DESeqDataSet} object and performs several
+#' exploratory analyses to evaluate sample similarity and major sources
+#' of variation within the dataset.
+#'
+#' The analysis:
+#' \enumerate{
+#' \item applies a variance-stabilizing transformation to the expression
+#' matrix,
+#' \item identifies the top variable genes,
+#' \item calculates Euclidean distances between samples,
+#' \item performs principal component analysis (PCA) using the top variable
+#' genes,
+#' \item generates sample embedding plots,
+#' \item generates an elbow plot showing the variance explained by the
+#' leading principal components, and
+#' \item performs UMAP for nonlinear dimensionality reduction.
+#' }
+#'
+#' @param bulk_dataset A formatted \code{DESeqDataSet} (\code{DDS}) object
+#' containing the RNA-seq expression data and associated sample metadata.
+#'
+#' @param top_var Integer specifying the number of genes with the highest
+#' variance to retain for PCA and downstream dimension reduction.
+#' For example, \code{top_var = 2000} uses the 2,000 most variable genes.
+#'
+#' @param grouping Character string specifying the sample metadata variable
+#' used to annotate or group samples in the distance and dimension
+#' reduction visualizations. The variable should correspond to a column
+#' in the \code{colData} of \code{bulk_dataset}.
+#'
+#'
+#'@returns
+#'\itemize{
+#'  \item{ \code{distance_plot}: euclidean distance plot,}
+#'  \item{\code{elbow_plot}: shows which PC has the majority of the variance within the data }
+#'  \item{\code{PCA plot}: scatterplot of the left unitary vectors}
+#'  \item{\code{UMAP_plot}: A UMAP visualization of the sample embeddings.}
+#'
+#'  results$distance_plot
+#' results$PCA_plot
+#' results$elbow_plot
+#' results$umap_plot
+#'}
+#'
+#'@example
+#'\dontrun{
+#'      baseline_dimreduction(dds_object, top_var = 2000, grouping = NA)
+#'}
+
+
+
+
+
+
+
+
 baseline_dimreduction <- function(bulk_dataset,
+                                  top_var = 2000,
                                   grouping = NA){
 
-  library(umap)
   library(ggplot2)
+  require(umap)
+  require(prcomp)
 
   if (!is.na(grouping) && is.character(grouping)) {
     if (!grouping %in% colnames(colData(bulk_dataset))) {
@@ -30,7 +99,7 @@ baseline_dimreduction <- function(bulk_dataset,
   # Setting Variance Stable Counts as Priority Assay
   vst_mat <- assay(bulk_dataset, "var_stable")
   #Select top variable gene
-  top_var_genes <- head(order(rowVars(vst_mat), decreasing = TRUE), 2000)
+  top_var_genes <- head(order(rowVars(vst_mat), decreasing = TRUE), top_var)
   vst_top <- vst_mat[top_var_genes, ]
   # Run PCA via R
   # Remember PCA is taking the right unitary martrix (VT) (feature space) of SVD
