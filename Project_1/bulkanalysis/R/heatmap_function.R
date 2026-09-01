@@ -55,8 +55,7 @@
 #'   DEG_table = deg_results
 #' )
 #' }
-
-
+#' @export
 heatmap_function <- function(initial_table,
                              table_list,
                              #Conversion function arguments

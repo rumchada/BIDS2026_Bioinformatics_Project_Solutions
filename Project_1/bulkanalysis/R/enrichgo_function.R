@@ -50,8 +50,7 @@
 #'                                      keyType = "ENSEMBL",
 #'                                        ont = "BP")
 #'}
-
-
+#'@export
 ora_enrichgo <- function(filtered_results,
                          direction = c("up", "down"),
                          log2fc_thresh = 1,

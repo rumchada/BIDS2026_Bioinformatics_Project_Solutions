@@ -54,6 +54,7 @@
 #'
 #' * `Q-value (FDR)`: The proportion of false positives after accounting
 #'   for multiple testing.
+#'@export
 
 
 edgeR_diffexp <- function(dds_object,

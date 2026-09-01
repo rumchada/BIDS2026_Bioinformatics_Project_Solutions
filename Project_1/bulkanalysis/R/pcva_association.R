@@ -1,3 +1,48 @@
+#' @title Principal Component Variation Association
+#'
+#' @name pc_var_association
+#'
+#' @description
+#' Quantifies the association between sample-level metadata variables and
+#' principal components (PCs) derived from a bulk RNA-seq expression dataset.
+#' The function evaluates both categorical variables (covariates) and continuous
+#' variables across the top principal components and returns a matrix of
+#' statistical significance values.
+#'
+#' This function is a custom implementation inspired by Principal Variance
+#' Component Analysis (PVCA) described by Li, J., Bushel, P., et. al.Chapter 12, 2010. It can be used both before
+#' and after batch correction to evaluate whether experimental, biological,
+#' or technical variables explain major sources of variation in the dataset.
+#'
+#' @details
+#' INPUT:
+#'
+#' A \code{DESeqDataSet} object containing normalized or appropriately
+#' transformed expression data and corresponding sample metadata.
+#'
+#' Metadata variables are evaluated according to their data type:
+#'
+#' \itemize{
+#' \item Categorical variables are evaluated using ANOVA and an F-test.
+#' \item Continuous variables are evaluated using an appropriate linear
+#' model or association test.
+#' }
+#'
+#'@return
+#' A matrix containing p-values representing the association between each
+#' metadata variable and each principal component. The matrix has principal
+#' components as rows and metadata variables as columns.
+#'
+#' A heatmap visualizing the resulting p-value matrix is also generated.
+#'
+#' @references
+#' Li, J., Bushel, P., Chu, T., Wolfinger, R., Batch Effects and Noise in Microarray Experiment, Chapter 12, 2010
+#'
+#'#' @seealso
+#' \code{\link[DESeq2]{DESeqDataSet}},
+#' \code{\link[DESeq2]{vst}},
+#' \code{\link[DESeq2]{rlog}}
+#' @export
 pc_var_association <- function(bulk_ds){
   library(pheatmap)
   vst_mat <- assay(bulk_ds, "var_stable")

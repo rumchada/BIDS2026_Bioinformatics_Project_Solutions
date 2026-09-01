@@ -24,7 +24,7 @@ library(DESeq2)
 library(clusterProfiler)
 library(RNAseqQC)
 library(edgeR)
-source("../Project_1_function_lab.R")
+#source("../Project_1_function_lab.R")
 ```
 
 ```{r}
@@ -153,6 +153,10 @@ covid19_ds1_analysis$volcano_plots
 covid19_ds1_analysis$heatmap
 covid19_ds1_analysis$ora_down_raw$enrichgo_visuals
 covid19_ds1_analysis$ora_up_raw$enrichgo_visuals
+```
+
+```{r}
+covid19_ds1_analysis$unpacked_results_down$`healthy-covid19`$`leukocyte mediated immunity`
 ```
 
 # **Covid-19 DS2 GSE**152641 **Downstream Analysis**

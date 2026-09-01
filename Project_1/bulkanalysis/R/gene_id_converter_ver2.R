@@ -8,7 +8,6 @@
 #' of genes into any of the three supported identifier forms.
 #'
 #' @name gene_id_converter_ver2
-#' @aliases gene_id_converter_ver2
 #'
 #' @param vector Character vector of genes.
 #'
@@ -38,6 +37,7 @@
 #'   ensembl_dataset = "hsapiens_gene_ensembl"
 #' )
 #' }
+#' @export
 
 
 gene_id_converter_ver2 <- function(vector,

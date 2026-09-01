@@ -1,17 +1,15 @@
-#' Baseline Dimension Reduction of RNA-seq Data
-#'
-#' Performs baseline exploratory dimension reduction and sample-level
-#' visualization of a \code{DESeqDataSet}. Variance-stabilized expression
-#' values are used to calculate sample distances and principal components.
-#' The most variable genes are used for PCA and downstream visualization.
+#' @title Baseline Dimension Reduction of RNA-seq Data
 #'
 #' @name baseline_dimreduction
-#' @aliases baseline_dimreduction
 #'
 #' @description
 #' Takes a formatted \code{DESeqDataSet} object and performs several
 #' exploratory analyses to evaluate sample similarity and major sources
 #' of variation within the dataset.
+#' Performs baseline exploratory dimension reduction and sample-level
+#' visualization of a \code{DESeqDataSet}. Variance-stabilized expression
+#' values are used to calculate sample distances and principal components.
+#' The most variable genes are used for PCA and downstream visualization.
 #'
 #' The analysis:
 #' \enumerate{
@@ -53,18 +51,9 @@
 #' results$umap_plot
 #'}
 #'
-#'@example
-#'\dontrun{
-#'      baseline_dimreduction(dds_object, top_var = 2000, grouping = NA)
-#'}
-
-
-
-
-
-
-
-
+#'@examples
+#'\dontrun{ baseline_dimreduction(dds_object, top_var = 2000, grouping = NA)}
+#'@export
 baseline_dimreduction <- function(bulk_dataset,
                                   top_var = 2000,
                                   grouping = NA){

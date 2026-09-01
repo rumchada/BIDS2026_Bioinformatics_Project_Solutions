@@ -1,10 +1,10 @@
-#' Volcano Plot Visualization
+#'@title Volcano Plot Visualization
 #'
+#'@name volcano_plot
+#'
+#' @description
 #' Uses `ggplot2`, `ggrepel`, and `tidyverse` to construct a volcano
 #' plot from differential expression results.
-#'
-#' @name volcano_plot
-#' @alias volcano_plot
 #'
 #' @param diffexp_df A tibble or data frame containing differential
 #'   expression results. Must contain, at minimum, `p.val_adj` and
@@ -33,9 +33,7 @@
 #'     \item `data`: A data frame containing the differential expression
 #'       results used to construct the plot.
 #'   }
-
-
-# Volcano Plot Visualizations
+#'@export
 volcano_plot <- function(diffexp_df,
                          #data-alterations
                          log2fc_thresh = 0,
