@@ -21,10 +21,6 @@ library(TxDb.Hsapiens.UCSC.hg38.knownGene)
 library(RNAseqQC)
 ```
 
-```{r}
-
-```
-
 ## Reading in GSE202805 file
 
 80 Samples:
@@ -215,6 +211,7 @@ tbl_ds2 <- tryCatch(
 # cleaning the meta_data
 meta_152641 <- meta_152641 %>%
             rename("condition" = "disease:ch1") %>%
+  
             dplyr::mutate(condition = gsub("control", "", condition)) %>% 
             dplyr::mutate(condition = trimws(condition)) %>%
             dplyr::mutate(condition = gsub("s$","", condition)) %>%

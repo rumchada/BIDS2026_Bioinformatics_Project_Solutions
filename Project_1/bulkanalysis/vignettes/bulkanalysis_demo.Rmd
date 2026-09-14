@@ -24,7 +24,7 @@ library(bulkanalysis)
 
 The purpose is to show how to prepare a random dataset from [GEO Query](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE133432) for the bulk-analysis package. GEO133432 will be used to prepare a Deseq2dataset object compatabl with the rest of functions in the bulk analysis package.
 
-### **Context: GEO133432, Quick Summary:**
+### **GEO133432, Quick Summary:**
 
 **GEO133432 Desc.** : Overall Design: "mRNA profiles were generated from in vivo iPSC-derived microglia ( 3 cell lines isolated from murine brains, n=3-6 mice/line), saline or LPS-treated iPSC-derived in vitro and in vivo microglia (n=3-5 replicates/condition), and human microglia (n=2 individuals) using an Illumina HiSeq 4000" - Blurton-Jones M, Hasselman J
 
@@ -52,7 +52,7 @@ Please Read the paper for more information: [(Hasselmann, J., Coburn, M., Neuron
 | Human Ex Vivo Microglia           | n = 2             | NA (n = 2)   | Homo Sapien | Homo Sapien (n = 2) |
 +-----------------------------------+-------------------+--------------+-------------+---------------------+
 
-We can read in this dataset using the GEOquery package.
+### GEOquery Read In
 
 ```{r}
 library(GEOquery)
@@ -64,10 +64,8 @@ gse_133432 <- gse_133432[[1]]
 
 #expression matrix
 expr_133432 <- exprs(gse_133432)
-
 #meta-data
 meta_133432 <- pData(gse_133432)
-
 #download the data into the data directory
 getGEOSuppFiles("GSE133432")
 
@@ -84,22 +82,81 @@ For GSE133432 one of the comparisons the authors did was to compare the microgli
 For demonstrating the functions of bulk analysis pacakge we will only be doing differential expression on the LPS and DBPS groups ideally recreating results from figure 2D or 2G in the original paper
 
 ```{r}
-library(vroom)
+path <- "./vignettes/GSE133432/GSE133432_Hasselmann_2019_BulkSeqCounts.tsv.gz"
 
-path <- "./vignettes/GSE133432/GSE133432_series_matrix.txt.gz"
-
-counts <- read.delim(gzfile(path))
-
-counts 
-
+exists(path)
 ```
 
 ```{r}
-path <- "./GSE202805/GSE133432_series_matrix.txt.gz"
+library(vroom)
+
+path <- "/Users/gbolden/Desktop/SPG2026/BIDS_2026/Project_1/bulkanalysis/vignettes/GSE133432/GSE133432_Hasselmann_2019_BulkSeqCounts.tsv.gz"
 
 counts <- read.delim(gzfile(path))
+# contains the count matrices of the 34 samples
+counts 
+#Some dataset will still come with the sorted bam file that outputs from command line functions such as featureCounts (subread)
+```
 
-colnames(counts) <- sub("\\.bam$", "", colnames(counts))
+Some datasets will still come within the sorted bam file that outputs from command line functions such as featureCounts (subread). In case that happens use the select(-c()) to get rid of columns such as Chr, Start, End, Strand, Length. Which useful if you have epigenomic data such as ChIP or ATAC data. However we will have to use tidyverse on the metadata table to only the relevant columns
 
-counts <- counts %>% dplyr::select(-c(Chr, Start, End, Strand, Length))
+```{r}
+# I believe these are all TPM normalized counts because they are continuous values instead of discrete.
+counts <- counts %>% dplyr::select(-ID) %>% column_to_rownames(var = "Gene")
+counts <- as.matrix(counts)
+#WARNING CHECK THE NUMBER OF SAMPLES YOU HAVEM IN BOTH THE COUNTS AND META-DATA
+dim(counts)
+```
+
+### Meta-Data Editing
+
+```{r}
+library(data.table)
+library(tidyverse)
+library(stringr)
+#rownames are redundant to the geo_accession column
+rownames(meta_133432) <- rownames(NA)
+
+# For a Deseq2 Dataset Object, the rownames of the metadata table and column names of the count matrix need to be the same names in the same order.
+meta_133432 <- meta_133432 %>% 
+              column_to_rownames(var = "title") %>%
+              
+              #selecting mos relevant columns
+              select(c(geo_accession, "cell sex:ch1","cell type:ch1", "host organism:ch1", "treatment:ch1"))
+                
+              #cleaning treatment group column
+# in the treatment column we can simplify to the most relavant phrases for the purposes of demonstration.
+meta_133432 <- meta_133432 %>% mutate(
+  `treatment:ch1` = str_extract(
+    `treatment:ch1`,
+    "LPS|DPBS|NA"
+  )
+)
+#setting new names and old names
+oldnames <- c("cell sex:ch1", "cell type:ch1", "host organism:ch1", "treatment:ch1")
+newnames <- c("sex", "cell_type", "host_organism", "treatment")
+setnames(meta_133432, old = oldnames, new = newnames)
+```
+
+```{r}
+meta_133432
+```
+
+We have simplified the meta data into the essential parts. These are not ready to fit inside the required object format for the package
+
+Adding Meta-Data and Counts matrix and Meta_Data to the DeseqDatasetSet2
+
+```{r}
+library(DESeq2)
+# Unflitered Counts Saved to a DeSeqDataSet (dds object)
+covid19_ds1 <- make_dds(counts = counts , metadata = metadata, ah_record = "AH52260")
+#renaming counts to raw counts
+assayNames(covid19_ds1)[1] <- "counts"
+
+#variance stabilized Raw counts
+assays(covid19_ds1)[[2]] <- vst(covid19_ds1@assays@data$counts)
+assayNames(covid19_ds1)[2] <- "var_stable"
+#log_transformed (log normalized counts)
+assays(covid19_ds1)[[3]] <- log10(covid19_ds1@assays@data$counts + 1)
+assayNames(covid19_ds1)[3] <- "log_counts"
 ```
