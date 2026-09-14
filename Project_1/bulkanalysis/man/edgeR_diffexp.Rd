@@ -14,23 +14,23 @@ edgeR_diffexp(
 }
 \arguments{
 \item{dds_object}{A formatted DESeq2 object where each sample and its
-counts are aligned with the respective metadata in `@colData`.}
+counts are aligned with the respective metadata in \verb{@colData}.}
 
 \item{condition}{The name of the condition column in the metadata
-table in `colData`.}
+table in \code{colData}.}
 
 \item{reference_group_name}{The name of the control group to compare
-against for each comparison. For example, `"healthy"` or `"control"`.}
+against for each comparison. For example, \code{"healthy"} or \code{"control"}.}
 
 \item{initial_pvalue_cutoff}{The initial p-value cutoff used for
-  filtering.
+filtering.
 
- @param adjust.method choose a method of pval correct Family Wise Error Rate reccomended}
+@param adjust.method choose a method of pval correct Family Wise Error Rate reccomended}
 }
 \value{
 A list of data frames containing every possible combination
-  of binary comparisons (control vs. experimental group) within your
-  metadata.
+of binary comparisons (control vs. experimental group) within your
+metadata.
 }
 \description{
 Performs differential expression analysis on a formatted DESeq2 object.
@@ -38,16 +38,15 @@ Performs differential expression analysis on a formatted DESeq2 object.
 \details{
 Performs differential expression analysis on a formatted DESeq2 object.
 
-
 INPUTS:
 
 A DESeq2 object with metadata columns corresponding to the samples
 supplied.
 
-`condition`: A string giving the name of the condition column within
-the DESeq2 object's `@colData` metadata.
+\code{condition}: A string giving the name of the condition column within
+the DESeq2 object's \verb{@colData} metadata.
 
-`reference_group_name`: A string specifying the control group for
+\code{reference_group_name}: A string specifying the control group for
 the experiment.
 
 OUTPUTS:
@@ -57,13 +56,12 @@ comparisons (control vs. experimental group) within the supplied
 metadata.
 
 The resulting data frames contain the following columns:
-
-* `log2FC`: The log2-scaled fold change of a given gene across the
-  specified samples.
-
-* `P-value`: The probability of obtaining data as extreme as the
-  observed values assuming that the null hypothesis is true.
-
-* `Q-value (FDR)`: The proportion of false positives after accounting
-  for multiple testing.
+\itemize{
+\item \code{log2FC}: The log2-scaled fold change of a given gene across the
+specified samples.
+\item \code{P-value}: The probability of obtaining data as extreme as the
+observed values assuming that the null hypothesis is true.
+\item \code{Q-value (FDR)}: The proportion of false positives after accounting
+for multiple testing.
+}
 }

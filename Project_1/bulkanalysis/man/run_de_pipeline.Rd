@@ -22,10 +22,10 @@ run_de_pipeline(
 \item{deg_log2fc_thresh}{absolute value cutoff of log2fc}
 
 \item{vol_plot_lower_xlim}{Numeric value specifying the lower limit of the
-x-axis. Should be less than 0. For example, `-5`.}
+x-axis. Should be less than 0. For example, \code{-5}.}
 
 \item{vol_plot_upper_xlim}{Numeric value specifying the upper limit of the
-x-axis. Should be greater than 0. For example, `5`.}
+x-axis. Should be greater than 0. For example, \code{5}.}
 
 \item{cartesian_step}{Numeric value specifying the interval between x-axis ticks.}
 
@@ -34,12 +34,12 @@ x-axis. Should be greater than 0. For example, `5`.}
 \value{
 A list of the following objects
 \itemize{
-   \item{filtered_results}: The initial filtering of DEGs log2fc and pval_adj_threshold
-   \item{volcano_plots}: visualization of the filtered results on a volcano plot
-   \item{ora_up_raw}: Result of the over-representation analysis on upregulated DEGs via clusterProfiler
-   \item{ora_down_raw}: Result of the over-represenation analysis on downregulated DEGs via clusterProfiler
-   \item{unpacked_results_up}: unpacked results table consisting of a nested list of ORA results on the upregulated DEGs
-   \item{unpacked_results_down}: unpacked results table consisting of a nested list of ORA results on the down-regulated DEGs
+\item{filtered_results}: The initial filtering of DEGs log2fc and pval_adj_threshold
+\item{volcano_plots}: visualization of the filtered results on a volcano plot
+\item{ora_up_raw}: Result of the over-representation analysis on upregulated DEGs via clusterProfiler
+\item{ora_down_raw}: Result of the over-represenation analysis on downregulated DEGs via clusterProfiler
+\item{unpacked_results_up}: unpacked results table consisting of a nested list of ORA results on the upregulated DEGs
+\item{unpacked_results_down}: unpacked results table consisting of a nested list of ORA results on the down-regulated DEGs
 }
 }
 \description{

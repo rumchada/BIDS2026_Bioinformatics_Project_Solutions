@@ -20,7 +20,7 @@ ora_enrichgo(
 
 \item{top_terms}{How many resulting terms should be display in the visuals.}
 
-\item{OrgDb}{rganism database. Default is human: `org.Hs.eg.db`.
+\item{OrgDb}{rganism database. Default is human: \code{org.Hs.eg.db}.
 Other organism annotation databases are available from
 https://bioconductor.org/packages/3.23/data/annotation/.}
 

@@ -21,12 +21,12 @@ in the \code{colData} of \code{bulk_dataset}.}
 }
 \value{
 \itemize{
- \item{ \code{distance_plot}: euclidean distance plot,}
- \item{\code{elbow_plot}: shows which PC has the majority of the variance within the data }
- \item{\code{PCA plot}: scatterplot of the left unitary vectors}
- \item{\code{UMAP_plot}: A UMAP visualization of the sample embeddings.}
+\item{ \code{distance_plot}: euclidean distance plot,}
+\item{\code{elbow_plot}: shows which PC has the majority of the variance within the data }
+\item{\code{PCA plot}: scatterplot of the left unitary vectors}
+\item{\code{UMAP_plot}: A UMAP visualization of the sample embeddings.}
 
- results$distance_plot
+results$distance_plot
 results$PCA_plot
 results$elbow_plot
 results$umap_plot

@@ -1,0 +1,105 @@
+---
+title: "bulkanalysis_demo"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{bulkanalysis_demo}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Library Read In
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(bulkanalysis)
+```
+
+# Bulk-RNASeq Formatting
+
+The purpose is to show how to prepare a random dataset from [GEO Query](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE133432) for the bulk-analysis package. GEO133432 will be used to prepare a Deseq2dataset object compatabl with the rest of functions in the bulk analysis package.
+
+### **Context: GEO133432, Quick Summary:**
+
+**GEO133432 Desc.** : Overall Design: "mRNA profiles were generated from in vivo iPSC-derived microglia ( 3 cell lines isolated from murine brains, n=3-6 mice/line), saline or LPS-treated iPSC-derived in vitro and in vivo microglia (n=3-5 replicates/condition), and human microglia (n=2 individuals) using an Illumina HiSeq 4000" - Blurton-Jones M, Hasselman J
+
+**Citation:** Hasselmann J, Coburn MA, England W, Figueroa Velez DX et al. Development of a Chimeric Model to Study and Manipulate Human Microglia In Vivo. Neuron 2019 Sep 25;103(6):1016-1033.e10. PMID: 31375314
+
+Please Read the paper for more information: [(Hasselmann, J., Coburn, M., Neuron, Sept., 2019)](https://pubmed.ncbi.nlm.nih.gov/31375314/)
+
+**Sample Population Stats:**
+
++-----------------------------------+-------------------+--------------+-------------+---------------------+
+| Groups                            | Total Sample Size | Treatments   | Organism    | Host                |
++===================================+===================+==============+=============+=====================+
+| xenotransplanted Microglia (xMGL) | n = 19            | DPBS (n = 3) | Homo Sapien | Mus Musculous       |
+|                                   |                   |              |             |                     |
+|                                   |                   | LPS (n = 5)  |             | (n = 18)            |
+|                                   |                   |              |             |                     |
+|                                   |                   | NA (n = 11)  |             |                     |
++-----------------------------------+-------------------+--------------+-------------+---------------------+
+| induced Microglia (iMGL)          | n = 12            | DPBS (n = 3) | Homo Sapien | NA(n = 8)           |
+|                                   |                   |              |             |                     |
+|                                   |                   | LPS (n = 3)  |             |                     |
+|                                   |                   |              |             |                     |
+|                                   |                   | NA (n = 6)   |             |                     |
++-----------------------------------+-------------------+--------------+-------------+---------------------+
+| Human Ex Vivo Microglia           | n = 2             | NA (n = 2)   | Homo Sapien | Homo Sapien (n = 2) |
++-----------------------------------+-------------------+--------------+-------------+---------------------+
+
+We can read in this dataset using the GEOquery package.
+
+```{r}
+library(GEOquery)
+#read in the whole count matrices and meta data
+gse_133432  <- getGEO("GSE133432", GSEMatrix = TRUE)
+
+#divide the ExpressionSet into the expression matrix and meta data
+gse_133432 <- gse_133432[[1]]
+
+#expression matrix
+expr_133432 <- exprs(gse_133432)
+
+#meta-data
+meta_133432 <- pData(gse_133432)
+
+#download the data into the data directory
+getGEOSuppFiles("GSE133432")
+
+```
+
+Check meta data for which groups you would like set the comparisons to.
+
+```{r}
+meta_133432
+```
+
+For GSE133432 one of the comparisons the authors did was to compare the microglial behavior of the xenotransplanted Microglia and induced Microglia after treatment of Phosphate Buffer Saline (DPBS) and lipopolysaccarides to activate transition microglia to M1 into M2 stage within the chimeric mouse models. Can the chimeric mouse model host activated microglia and show similar transcriptomic profile as induced microglia?
+
+For demonstrating the functions of bulk analysis pacakge we will only be doing differential expression on the LPS and DBPS groups ideally recreating results from figure 2D or 2G in the original paper
+
+```{r}
+library(vroom)
+
+path <- "./vignettes/GSE133432/GSE133432_series_matrix.txt.gz"
+
+counts <- read.delim(gzfile(path))
+
+counts 
+
+```
+
+```{r}
+path <- "./GSE202805/GSE133432_series_matrix.txt.gz"
+
+counts <- read.delim(gzfile(path))
+
+colnames(counts) <- sub("\\.bam$", "", colnames(counts))
+
+counts <- counts %>% dplyr::select(-c(Chr, Start, End, Strand, Length))
+```

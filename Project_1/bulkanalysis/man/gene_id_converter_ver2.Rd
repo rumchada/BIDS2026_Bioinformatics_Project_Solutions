@@ -10,28 +10,28 @@ gene_id_converter_ver2(vector, from_type, to_type, org_db, ensembl_datset)
 \item{vector}{Character vector of genes.}
 
 \item{from_type}{Character string specifying the initial annotation
-type of the genes. Supported values include `"ensembl"`,
-`"entrez"`, and `"symbol"`.}
+type of the genes. Supported values include \code{"ensembl"},
+\code{"entrez"}, and \code{"symbol"}.}
 
 \item{to_type}{Character string specifying the desired annotation
-type of the genes. Supported values include `"ensembl"`,
-`"entrez"`, and `"symbol"`.}
+type of the genes. Supported values include \code{"ensembl"},
+\code{"entrez"}, and \code{"symbol"}.}
 
 \item{org_db}{An organism-specific annotation database used to
-facilitate gene identifier conversion, such as `org.Hs.eg.db`
-or `org.Mm.eg.db`.}
+facilitate gene identifier conversion, such as \code{org.Hs.eg.db}
+or \code{org.Mm.eg.db}.}
 
 \item{ensembl_dataset}{A character string specifying the Ensembl
 dataset used for annotation. For example,
-`"hsapiens_gene_ensembl"` for human genes.}
+\code{"hsapiens_gene_ensembl"} for human genes.}
 }
 \description{
 Enter the type of conversion from_type and to_type
-(e.g. `"ensembl"`, `"entrez"`, `"symbol"`).
+(e.g. \code{"ensembl"}, \code{"entrez"}, \code{"symbol"}).
 }
 \details{
-Uses `Bioconductor::getBM()` and `tryCatch()` to communicate with
-the Ensembl database via `getBM()` to convert a character vector
+Uses \code{Bioconductor::getBM()} and \code{tryCatch()} to communicate with
+the Ensembl database via \code{getBM()} to convert a character vector
 of genes into any of the three supported identifier forms.
 }
 \examples{

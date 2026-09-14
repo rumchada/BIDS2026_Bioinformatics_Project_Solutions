@@ -10,7 +10,15 @@ Authors@R: c(
     )
   )
 Description: Made with functions to assist me with Project 1 of the BIDS 2026 Hackathon. The Majority of the functions in this pacakge require that your objects be in a very specifc format within the DeSeq Dataset 2 object.
-License: What license is it under?
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Config/roxygen2/version: 8.0.0
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
+Imports: 
+    magrittr
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

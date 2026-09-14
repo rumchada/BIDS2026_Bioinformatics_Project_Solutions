@@ -15,8 +15,8 @@ volcano_plot(
 }
 \arguments{
 \item{diffexp_df}{A tibble or data frame containing differential
-expression results. Must contain, at minimum, `p.val_adj` and
-`log2FC` columns.}
+expression results. Must contain, at minimum, \code{p.val_adj} and
+\code{log2FC} columns.}
 
 \item{log2fc_thresh}{Numeric threshold for the absolute log2 fold-change
 used to identify differentially expressed genes for display.}
@@ -25,10 +25,10 @@ used to identify differentially expressed genes for display.}
 to identify statistically significant differentially expressed genes.}
 
 \item{lower_xlim}{Numeric value specifying the lower limit of the
-x-axis. Should be less than 0. For example, `-5`.}
+x-axis. Should be less than 0. For example, \code{-5}.}
 
 \item{upper_xlim}{Numeric value specifying the upper limit of the
-x-axis. Should be greater than 0. For example, `5`.}
+x-axis. Should be greater than 0. For example, \code{5}.}
 
 \item{step}{Numeric value specifying the interval between x-axis ticks.}
 
@@ -37,13 +37,13 @@ volcano plot.}
 }
 \value{
 A list containing:
-  \itemize{
-    \item `plot`: A ggplot object containing the volcano plot.
-    \item `data`: A data frame containing the differential expression
-      results used to construct the plot.
-  }
+\itemize{
+\item \code{plot}: A ggplot object containing the volcano plot.
+\item \code{data}: A data frame containing the differential expression
+results used to construct the plot.
+}
 }
 \description{
-Uses `ggplot2`, `ggrepel`, and `tidyverse` to construct a volcano
+Uses \code{ggplot2}, \code{ggrepel}, and \code{tidyverse} to construct a volcano
 plot from differential expression results.
 }
