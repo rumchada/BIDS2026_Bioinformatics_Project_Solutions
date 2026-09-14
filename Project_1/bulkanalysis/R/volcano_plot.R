@@ -33,6 +33,10 @@
 #'     \item `data`: A data frame containing the differential expression
 #'       results used to construct the plot.
 #'   }
+#'
+#' @importFrom dplyr mutate case_when filter
+#'
+#' @importFrom ggplot2 ggplot aes geom_point geom_vline geom_hline theme_classic theme element_text rel scale_color_manual coord_cartesian scale_x_continuous geom_text margin
 #'@export
 volcano_plot <- function(diffexp_df,
                          #data-alterations
@@ -42,10 +46,6 @@ volcano_plot <- function(diffexp_df,
                          lower_xlim = -5,
                          upper_xlim = 5,
                          step = 1) {
-
-  library(ggrepel)
-  library(ggplot2)
-  library(dplyr)
 
   volcano_df <- diffexp_df %>%
     mutate(

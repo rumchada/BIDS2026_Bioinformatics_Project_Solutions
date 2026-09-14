@@ -4,8 +4,8 @@ Title: Bulk Transcriptomic Analysis Project
 Version: 0.1.0
 Authors@R: c(
     person(
-      "Jane", "Doe",
-      email = "jane@example.com",
+      "Geordan", "Bolden",
+      email = "gbolden101@gmail.com",
       role = c("aut", "cre")
     )
   )
@@ -16,8 +16,26 @@ LazyData: true
 Config/roxygen2/version: 8.0.0
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 8.0.0
-Imports: 
-    magrittr
+Imports:
+    AnnotationDbi,
+    biomaRt,
+    circlize,
+    clusterProfiler,
+    ComplexHeatmap,
+    dplyr,
+    edgeR,
+    forcats,
+    ggplot2,
+    glue,
+    limma,
+    magrittr,
+    matrixStats,
+    org.Hs.eg.db,
+    pheatmap,
+    scales,
+    SummarizedExperiment,
+    tibble,
+    umap
 Suggests: 
     knitr,
     rmarkdown

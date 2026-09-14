@@ -1,0 +1,238 @@
+---
+title: "bulkanalysis_demo_ver2"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{bulkanalysis_demo_ver2}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(bulkanalysis)
+```
+
+# Bulk-RNASeq Formatting
+
+The purpose is to show how to prepare a random dataset from [GEO Query](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE133432) for the bulk-analysis package. GEO202805 will be used to prepare a Deseq2dataset object compatable with the rest of functions in the bulk analysis package.
+
+**GEO202805 Summary**
+
+RNA sequencing was performed on a total of 80 PBMC samples derived from healthy controls (n = 10), acute-Mild (n = 4), Acute-Moderate (n = 6), Acute-Severe (n = 32) and Convalescent = 28
+
+```{r}
+library(GEOquery)
+#read in the whole count matrices and meta data
+
+gse_202805 <- getGEO("GSE202805", GSEMatrix = TRUE)
+
+#divide the ExpressionSet into the expression matrix and meta data
+
+gse_202805 <- gse_202805[[1]]
+
+#expression matrix
+
+expr_202805 <- exprs(gse_202805)
+
+#meta-data
+meta_202805 <- pData(gse_202805)
+
+
+head(expr_202805)
+head(meta_202805)
+#download the data into the data directory
+getGEOSuppFiles("GSE202805")
+```
+
+Check meta data for which groups you would like set the comparisons to.
+
+```{r}
+#checking if path exists
+library(vroom)
+path <- "./GSE202805/GSE202805_genecounts_20220406.txt.gz"
+
+counts <- read.delim(gzfile(path))
+
+colnames(counts) <- sub("\\.bam$", "", colnames(counts))
+#Some dataset will still come with the sorted bam file that outputs from command line functions such as featureCounts (subread)
+counts <- counts %>% dplyr::select(-c(Chr, Start, End, Strand, Length))
+# contains the count vecotrs of the 81 samples
+counts 
+#Some dataset will still come with the sorted bam file that outputs from command line functions such as featureCounts (subread)
+
+```
+
+Some datasets will still come within the sorted bam file that outputs from command line functions such as featureCounts (subread). In case that happens use the select(-c()) to get rid of columns such as Chr, Start, End, Strand, Length. Which useful if you have epigenomic data such as ChIP or ATAC data. However we will have to use tidyverse on the metadata table to only the relevant columns
+
+Meta-Data Editing
+
+```{r}
+library(data.table)
+library(tidyverse)
+library(stringr)
+
+
+meta_data <- meta_202805
+meta_data
+meta_data <- meta_data %>%
+  rownames_to_column(var = "samples") %>%
+  dplyr::select(samples, title, characteristics_ch1) %>%
+  mutate(characteristics_ch1 = gsub("group:", "", characteristics_ch1)) %>%
+  dplyr::select(-c(samples))
+
+mapping <- c(meta_data$characteristics_ch1)
+names(mapping) <- meta_data$title
+
+colnames(counts) <- mapping[colnames(counts)] 
+
+colnames(counts) <- paste(names(mapping), colnames(counts), sep = "_")
+
+colnames(counts)[1] <- "geneid"
+
+
+# Character Specific Clean Up
+counts$geneid <- gsub("\\..*", "", counts$geneid)
+colnames(counts) <- gsub(" ", "", colnames(counts))
+
+# So this is a crucial part to remember lol is that acute-covid19, convalescant covid
+#added waay late into the game after first round of harmonization and integration
+colnames(counts) <- gsub("acute", "covid19", colnames(counts))
+
+# MetaData construction
+metadata <- data.frame(
+  sample = colnames(counts),
+  condition = dplyr::case_when(
+    grepl("_covid19$", colnames(counts)) ~ "covid19",
+    grepl("_convalescent$", colnames(counts)) ~ "convalescent",
+    grepl("healthy$", colnames(counts)) ~ "healthy",
+    TRUE ~ NA_character_
+  ) 
+) %>% dplyr::slice(., 2:nrow(.)) %>%
+  dplyr::mutate(condition = as.factor(condition)) %>%
+  dplyr::mutate(sample = as.factor(sample))
+```
+
+```{r}
+# summarizing replicated genes across all samples
+counts <- counts %>%
+  group_by(geneid) %>%
+  summarise(across(where(is.numeric), sum))
+
+counts <- counts %>% column_to_rownames(var = "geneid")
+
+
+metadata[] <- lapply(metadata, factor)
+
+```
+
+```{r}
+counts
+metadata
+```
+
+### Making DDS Object
+
+```{r}
+
+library(DESeq2)
+library(RNAseqQC)
+library(AnnotationHub)
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+
+
+# Unflitered Counts Saved to a DeSeqDataSet (dds object)
+covid19_ds1 <- make_dds(counts = counts , metadata = metadata, ah_record = "AH116291")
+#renaming counts to raw counts
+assayNames(covid19_ds1)[1] <- "counts"
+
+#variance stabilized Raw counts
+assays(covid19_ds1)[[2]] <- vst(covid19_ds1@assays@data$counts)
+assayNames(covid19_ds1)[2] <- "var_stable"
+#log_transformed (log normalized counts)
+assays(covid19_ds1)[[3]] <- log10(covid19_ds1@assays@data$counts + 1)
+assayNames(covid19_ds1)[3] <- "log_counts"
+```
+
+Necessary QC is required please check other resources for bulk RNA-Seq QC tutorial and rationale
+
+### Bulk Analysis Demonstration
+
+```{r}
+# In some scenarios, you will need to standardize your condition
+covid19_ds1@colData$condition <- covid19_ds1@colData$condition %>% tolower()
+```
+
+### Edge R Based Differential Expression
+
+```{r}
+dds_object <- covid19_ds1
+#Add the condition column name
+condition_col = "condition"
+#set a refreence group name
+ref_group_name = "healthy"
+
+
+#Performs inital differential expression on your DDS Object's raw counts dataframe
+# The use give the condition column from the metadata to make the test parameters
+# and the control group
+results_dds1 <- edgeR_diffexp(covid19_ds1, 
+                              condition_col,  
+                              ref_group_name,
+                              init_pval_cutoff = 0.5,
+                              adjust.method = "bonferroni")
+```
+
+Result is the list of valid binary comparisons within the data using EdgeR.
+
+See the `edgeR_diffexp()` documentation for more details \code{\link{edgeR_diffexp}}
+
+```{r}
+results_dds1
+```
+
+**Running the whole DE Downstream pipeline**
+
+Inputs: the DDS object, Results of the EdgeR Differential Expression analysis
+
+Outputs:
+
+```{r}
+library(org.Hs.eg.db)
+covid19_ds1_analysis <- run_de_pipeline(
+                                covid19_ds1, 
+                                results_dds1,
+                                deg_log2fc_thresh = 1, 
+                                deg_pval_adj_thresh = 0.05, 
+                                vol_plot_lower_xlim = -10, 
+                                vol_plot_upper_xlim = 10, 
+                                cartesian_step = 5, 
+                                ora_pval_adj_threshold = 0.10,
+                                orgdb = org.Hs.eg.db,
+                                ensembl_dataset = "hsapiens_gene_ensembl"
+                              )
+```
+
+## Volcano Plot
+
+```{r}
+covid19_ds1_analysis$volcano_plots$`healthy-covid19`
+```
+
+### Heatmaps
+
+```{r}
+covid19_ds1_analysis$heatmap$`healthy-covid19`
+```
+
+### ORA DotPlot Summary for Up Regulated and DownRegulated DEGs
+
+```{r}
+covid19_ds1_analysis$ora_up_raw$enrichgo_visuals$`healthy-covid19`
+covid19_ds1_analysis$ora_down_raw$enrichgo_visuals$`healthy-covid19`
+```

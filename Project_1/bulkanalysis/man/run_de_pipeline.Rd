@@ -13,7 +13,9 @@ run_de_pipeline(
   vol_plot_upper_xlim = 10,
   cartesian_step = 5,
   ora_convert_ids = FALSE,
-  ora_pval_adj_threshold = 0.05
+  ora_pval_adj_threshold = 0.05,
+  orgdb = org.Hs.eg.db,
+  ensembl_dataset = "hsapiens_gene_ensembl"
 )
 }
 \arguments{

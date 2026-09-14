@@ -60,9 +60,6 @@ ora_enrichgo <- function(filtered_results,
                          keyType = "ENSEMBL",
                          ont = "BP"){
 
-  require(clusterProfiler)
-  require(BiocManager)
-
 
   direction <- match.arg(direction)
 

@@ -48,6 +48,14 @@
 #' identifiers are retained in their original format and are not converted
 #' to external gene names within this function.
 #'
+#' @importFrom circlize colorRamp2
+#' @importFrom ComplexHeatmap Heatmap HeatmapAnnotation
+#' @importFrom grid gpar unit
+#' @importFrom scales hue_pal
+#' @importFrom glue glue
+#'
+#'
+#'
 #' @examples
 #' \dontrun{
 #' heatmap <- heatmap_visualization(
@@ -150,7 +158,8 @@ heatmap_function <- function(initial_table,
       rownames(expr_z),
       "ensembl",
       "symbol",
-      "hsapiens_gene_ensembl"
+      orgdb,
+      ensembl_dataset
     )
 
     gene_map <- setNames(

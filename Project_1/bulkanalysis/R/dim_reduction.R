@@ -53,6 +53,15 @@
 #'
 #'@examples
 #'\dontrun{ baseline_dimreduction(dds_object, top_var = 2000, grouping = NA)}
+#'
+#'
+#' @importFrom ggplot2 ggplot aes geom_line geom_point labs theme_minimal
+#' @importFrom umap umap
+#' @importFrom stats prcomp
+#' @importFrom matrixStats rowVars
+#' @importFrom SummarizedExperiment assays colData assay
+#'
+#'
 #'@export
 baseline_dimreduction <- function(bulk_dataset,
                                   top_var = 2000,

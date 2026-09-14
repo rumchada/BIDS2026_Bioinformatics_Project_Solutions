@@ -99,6 +99,8 @@ metadata <- data.frame(
   dplyr::mutate(sample = as.factor(sample))
 ```
 
+Meta-Data Editing
+
 ```{r}
 # summarizing replicated genes across all samples
 counts <- counts %>%

@@ -57,4 +57,6 @@ leading principal components, and
 }
 \examples{
 \dontrun{ baseline_dimreduction(dds_object, top_var = 2000, grouping = NA)}
+
+
 }

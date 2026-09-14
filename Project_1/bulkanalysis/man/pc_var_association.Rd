@@ -41,8 +41,8 @@ model or association test.
 }
 \references{
 Li, J., Bushel, P., Chu, T., Wolfinger, R., Batch Effects and Noise in Microarray Experiment, Chapter 12, 2010
-
-#' @seealso
+}
+\seealso{
 \code{\link[DESeq2]{DESeqDataSet}},
 \code{\link[DESeq2]{vst}},
 \code{\link[DESeq2]{rlog}}

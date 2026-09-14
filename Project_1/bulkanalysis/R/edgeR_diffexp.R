@@ -54,6 +54,12 @@
 #'
 #' * `Q-value (FDR)`: The proportion of false positives after accounting
 #'   for multiple testing.
+#'
+#' @importFrom edgeR DGEList filterByExpr calcNormFactors estimateDisp glmQLFit glmQLFTest topTags
+#' @importFrom limma makeContrasts
+#' @importFrom glue glue
+#' @importFrom tibble rownames_to_column
+#' @importFrom dplyr rename_with any_of
 #'@export
 
 
@@ -62,7 +68,7 @@ edgeR_diffexp <- function(dds_object,
                           ref_group_name,
                           init_pval_cutoff = 1,
                           adjust.method = "bonferroni") {
-  require(edgeR)
+
   #For each condition combination, runs an indepedent differential expression analysis
   #0-Intercept
 

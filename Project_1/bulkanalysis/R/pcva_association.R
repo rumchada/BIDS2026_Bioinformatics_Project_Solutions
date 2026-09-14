@@ -38,10 +38,19 @@
 #' @references
 #' Li, J., Bushel, P., Chu, T., Wolfinger, R., Batch Effects and Noise in Microarray Experiment, Chapter 12, 2010
 #'
-#'#' @seealso
+#'
+#' @importFrom pheatmap pheatmap
+#' @importFrom SummarizedExperiment assay
+#' @importFrom matrixStats rowVars
+#' @importFrom stats prcomp lm summary aov
+#'
+#'
+#' @seealso
 #' \code{\link[DESeq2]{DESeqDataSet}},
 #' \code{\link[DESeq2]{vst}},
 #' \code{\link[DESeq2]{rlog}}
+#'
+#'
 #' @export
 pc_var_association <- function(bulk_ds){
   library(pheatmap)

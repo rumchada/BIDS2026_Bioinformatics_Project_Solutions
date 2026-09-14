@@ -45,6 +45,10 @@
 #' Character string specifying the Ensembl dataset used for annotation.
 #' For example, \code{"hsapiens_gene_ensembl"} for human genes.
 #'
+#' @importFrom tibble as_tibble tibble
+#' @importFrom dplyr mutate filter inner_join relocate all_of
+#' @importFrom biomaRt useMart getBM
+#' @importFrom AnnotationDbi mapIds
 #'
 #'@details
 #'For each clusterProfiler result for each comparison available within, extract the gene_ids, then join them with their edgeR differential expression results

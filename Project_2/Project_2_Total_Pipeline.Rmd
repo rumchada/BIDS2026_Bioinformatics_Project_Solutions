@@ -941,41 +941,47 @@ Unsupervised clustering
 
 2.  Meta_data_cleaning -\> Binned continuous variables (age_group, PSA score, AR score, ABSOLUTE purity, Fraction_genome_altered)
 
-3.   Dim Reduction –\> log(TPM of HVGs(5k) +1 ) –\> PCA (centered and scaled Data) + Scree Plot for Variance Ratio per top PC –\> colored embeddings by 30 covariated (clinical, pathological, molecular, genomic)
+3.  Dim Reduction –\> log(TPM of HVGs(5k) +1 ) –\> PCA (centered and scaled Data) + Scree Plot for Variance Ratio per top PC –\> colored embeddings by 30 covariated (clinical, pathological, molecular, genomic)
 
-4.   Unsupervised Clustering part 1: Kmeans (sklearn in python): estimated average silhouette score for clusterting based on log(TPM of HVGs(5k)+1 ) and performed kmeans clustering –\> result: Overall we see weak intrinsic clustering structure of HVG GEX space alone.
+4.  Unsupervised Clustering part 1: Kmeans (sklearn in python): estimated average silhouette score for clusterting based on log(TPM of HVGs(5k)+1 ) and performed kmeans clustering –\> result: Overall we see weak intrinsic clustering structure of HVG GEX space alone.
 
-    Performed Sil score for kmeans clustering on metadata: found scores ranging from -0.072 to 0.009
+```         
+Performed Sil score for kmeans clustering on metadata: found scores ranging from -0.072 to 0.009
+```
 
-5.   Unsupervised Cluster part 2:
+5.  Unsupervised Cluster part 2:
 
-    Input: Top 10 PCs of log(TPM of HVGs(5k) + 1) GEX data
+```         
+Input: Top 10 PCs of log(TPM of HVGs(5k) + 1) GEX data
 
-    Hclustering on PCs: Graphed WSS/TSS and totalWSS to estimate cluster cut off after Hclust –\> performed Hclust with Euclidean Distance (L2 Norm)
+Hclustering on PCs: Graphed WSS/TSS and totalWSS to estimate cluster cut off after Hclust –\> performed Hclust with Euclidean Distance (L2 Norm)
 
-    Graphed WSS/TSS and totalWSS to estimate cluster cut off for Hclust –\> found a smooth elbow plot for both determining which means that there is not much cluster separation or tightness
+Graphed WSS/TSS and totalWSS to estimate cluster cut off for Hclust –\> found a smooth elbow plot for both determining which means that there is not much cluster separation or tightness
 
-    Its clear that there are continous latent variables within our disease homongenous data. Unlinke my previous bulk-RNAseq data, there are not two disease states only one.
+Its clear that there are continous latent variables within our disease homongenous data. Unlinke my previous bulk-RNAseq data, there are not two disease states only one.
+```
 
-6.   Moved to PVCA for variance association to find the variables that are associated with variance within the Top 10 PCs of log(TPM of HVGs(5k) + 1) GEX data:
+6.  Moved to PVCA for variance association to find the variables that are associated with variance within the Top 10 PCs of log(TPM of HVGs(5k) + 1) GEX data:
 
-    Result:
+```         
+Result:
 
-    **Highest Variance Associations Per PC**
+**Highest Variance Associations Per PC**
 
-    PC1: paper_iCluster, paper_mRNA_cluster, Absolute_purity_group, paper_Residual tumor
+PC1: paper_iCluster, paper_mRNA_cluster, Absolute_purity_group, paper_Residual tumor
 
-    PC2: at best Subtype, paper_Residual_tumor
+PC2: at best Subtype, paper_Residual_tumor
 
-    PC4: paper_methylation_cluster, paper_mRNA_cluster, AR_score_group
+PC4: paper_methylation_cluster, paper_mRNA_cluster, AR_score_group
 
-    PC5: mRNA_cluster, paper_methylation_cluster
+PC5: mRNA_cluster, paper_methylation_cluster
 
-    PC6: paper_iCluster,paper_methylation_cluster, paper_ERG_Status
+PC6: paper_iCluster,paper_methylation_cluster, paper_ERG_Status
 
-    Biggest Note: None of clinical variables have direct association with the variance within the PC space (paper_PSA/PSA_group, ajcc_pathologict_t, gleason score)
+Biggest Note: None of clinical variables have direct association with the variance within the PC space (paper_PSA/PSA_group, ajcc_pathologict_t, gleason score)
 
-    Subtype is not associated with the Variance in PC1 but PC6. Right before the drop off to PC7-PC10 where the scree plot show Percentage of variance of the data flatten to 0.
+Subtype is not associated with the Variance in PC1 but PC6. Right before the drop off to PC7-PC10 where the scree plot show Percentage of variance of the data flatten to 0.
+```
 
 **What we know:**
 

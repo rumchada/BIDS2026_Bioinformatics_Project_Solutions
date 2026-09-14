@@ -4,7 +4,8 @@
 #' Uses the edgeR differentiall expression results and the formatted Deseq2Dataset
 #' Performs volcano_plot.R which filters for the chosen log2fc and pval_adj
 #'
-#'
+#' @param dds_object A formatted DESeq2 object where each sample and its
+#'   counts are aligned with the respective metadata in `@colData`.
 #'
 #' @param edgeR_results dataframe of log2fc results from edge
 #'
@@ -47,7 +48,12 @@ run_de_pipeline <- function(dds_object,
                             cartesian_step = 5,
                             #over-representation test pvalue threshold
                             ora_convert_ids = FALSE,
-                            ora_pval_adj_threshold = 0.05) {
+
+                            ora_pval_adj_threshold = 0.05,
+
+                            orgdb = org.Hs.eg.db,
+
+                            ensembl_dataset = "hsapiens_gene_ensembl") {
 
   require(glue)
   require(clusterProfiler)
@@ -110,7 +116,10 @@ run_de_pipeline <- function(dds_object,
 
 
   #Plot the Heatmap of the Differential Expression Anaalysis
-  heatmap_visuals <- heatmap_function(dds_object, filtered_results)
+  heatmap_visuals <- heatmap_function(dds_object,
+                                      filtered_results,
+                                      ensembl_dataset = ensembl_dataset,
+                                      orgdb = orgdb)
 
 
   #saving visuals for Volcano plot

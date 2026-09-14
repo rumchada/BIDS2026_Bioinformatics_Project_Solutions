@@ -37,6 +37,10 @@
 #'   ensembl_dataset = "hsapiens_gene_ensembl"
 #' )
 #' }
+#' @importFrom biomaRt useMart getBM
+#' @importFrom AnnotationDbi mapIds
+#'
+#'
 #' @export
 
 
@@ -61,7 +65,7 @@ gene_id_converter_ver2 <- function(vector,
   return_df <- NULL
   max_attempts <- 2
   attempt <- 1
-  org_db <- org.Hs.eg.db
+  org_db <- org_db
 
 
   #Fix 1: There is a huge API crash almost 50% of the time that I use getBM() function to connect to the API
