@@ -1,5 +1,5 @@
 ---
-title: "bulkanalysis_demo_ver2"
+title: "bulkanalysis_demo"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{bulkanalysis_demo_ver2}
@@ -48,7 +48,7 @@ RNA sequencing was performed on a total of 80 PBMC samples derived from healthy 
 
 ### Downloading GEOquery Data
 
-```{r, message=FALSE}
+```{r, message=FALSE, include = FALSE}
 library(GEOquery)
 #read in the whole count matrices and meta data
 
@@ -85,12 +85,11 @@ colnames(counts) <- base::sub("\\.bam$", "", colnames(counts))
 #The columns being deleted are not necessary unless we are integrating ChIP or ATAC data.
 counts <- counts %>% dplyr::select(-c(Chr, Start, End, Strand, Length))
 # contains the count vectors of the 8 samples
-counts %>% head(n = 10)
 #Some dataset will still come with the sorted bam file that outputs from command line functions such as featureCounts (subread)
-
+counts[1:10, 1:10]
 ```
 
-Some datasets will still come within the sorted bam file that outputs from command line functions such as featureCounts (subread). In case that happens use the select(-c()) to get rid of columns such as Chr, Start, End, Strand, Length. Which useful if you have epigenomic data such as ChIP or ATAC data. However we will have to use tidyverse on the metadata table to only the basic relevant columns.
+Some datasets will still come within the sorted bam file that outputs from command line functions such as featureCounts (subread). In case that happens use the select(-c()) to get rid of columns such as Chr, Start, End, Strand, Length. Which useful if you have genomic (ChIP)or epigenomic (ATAC). However we will have to use tidyverse on the metadata table to only the basic relevant columns.
 
 # Meta-Data Editing
 
@@ -155,8 +154,8 @@ metadata[] <- lapply(metadata, factor)
 ```
 
 ```{r}
-counts %>% head(n = 10)
-metadata %>% head(n = 10)
+counts[]
+metadata[10, 10]
 ```
 
 # Making DDS Object
@@ -208,9 +207,35 @@ standardization of meta-data labels.
 covid19_ds1@colData$condition <- covid19_ds1@colData$condition %>% tolower()
 ```
 
-### Edge R Based Differential Expression
+### EdgeR Based Differential Expression
 
-NEED A DESCRIPTION FROM THE DOCUMENTATION AND CITATIONS
+Performs EdgeR based differential expression with limma support of each covariate specified in your meta-data with user set reference variable for pairwise differential expression of each sample condition within the submitted meta-data of your formatted Deseqdataset object. This is a standard pipeline sourced from [Daniel Neves and Daniel Sobral, "Using DESeq2 and edgeR in R", (April, 2018) vignette](https://gtpb.github.io/ADER18F/pages/tutorial1.html)
+
+1\. Extracts Raw counts
+
+2.  filters for low count genes within your count matrix and keeps sufficiently large counts to be retained in a statistical analysis (`edgeR::filterByExpr(y)`). Filtering is performed with respect to the experimental design/replication structure, rather than using an arbitrary fixed count cutoff.
+
+3.   `edgeR::normLibSizes(y)` calculates normalization factors, commonly using **TMM.**([TMM normalization](https://davetang.github.io/muse/edger.html) via `edgeR::normLibSizes(y)`). These factors adjust the effective library sizes so that samples are comparable despite differences in sequencing depth and RNA composition.
+
+4.  Re-affirms reference level relative to the experimental covariate
+
+5.  set design matrices as mean reference model expression = B1(reference)m + B2(experiemnt) for each pairwise combination of conditions in the metadata.
+
+    `design <- model.matrix(~0+condition, data = y$samples).`the model estimates the mean expression associated with each condition, and contrasts between those coefficients define the desired comparisons. THIS IS NOT THE PRIMARY COMPARISON ONLY FOR DESIGN MATRIX CONTRSUCTION.
+
+6.5: Estimates variability of each gne in the count data
+
+6.  Set limma::makeContrats() for each comparison of contrasts vectors to be applied in the [`edgerR::glmQLFit()`](https://www.rdocumentation.org/packages/edgeR/versions/3.14.0/topics/glmQLFit) function.
+
+For each contrast (comparison (reference vs x) and vector)
+
+7\. edgerR::glmQLFit() which fits the negative binomial generalised linear model using quaisi-liklihood methods and determines whether the observes group difference are larger than expected variability.
+
+8.Applies either Family Wise Error('bonferonni') or False Discovery Rate('BH') pvalue correction
+
+9.  Applies user filter of initial p.adjust value. Default is no filter applied.
+
+**Output**: A list object of data frames containing each possible combination of binary \#' comparisons (control vs. experimental group) within the supplied metadat
 
 ```{r}
 dds_object <- covid19_ds1
@@ -235,7 +260,13 @@ Result is the list of valid binary comparisons within the data using EdgeR.
 See the `edgeR_diffexp()` documentation for more details.
 
 ```{r}
-results_dds1$`healthy-convalescent`
+healthy_covid19_results <- results_dds1$`healthy-covid19`
+```
+
+```{r}
+healthy_covid19_results <- results_dds1$`healthy-covid19`
+
+results_dds1$`healthy-convalescent`[1:10, 1:ncol(healthy_covid19_results)]
 
 ```
 
@@ -291,7 +322,15 @@ covid19_ds1_analysis <- run_de_pipeline(
 
 The outputs of the run_de_pipeline are described below
 
-`filtered_results`: The initial filtered result of DEGs log2fc and pval_adj_threshold
+`filtered_results`: The initial filtered result of DEGs log2fc and pval_adj_threshold.
+
+**Columns:**
+
+\`log2FC\`: The log2-scaled fold change of a given gene across the \#' specified samples.
+
+`P-value`: The probability of obtaining data as extreme as the \#' observed values assuming that the null hypothesis is true.
+
+`Q-value (FDR)`: The proportion of false positives after accounting \#' for multiple testing.
 
 ```{r}
 library(glue)
@@ -299,8 +338,10 @@ demo_results <-covid19_ds1_analysis$filtered_results$`healthy-covid19`
 
 glue("Total DEGs in healthy vs covid-19 comparison: {dim(demo_results)[1]}")
 
-demo_results %>% head(n = 5)
+demo_results[1:10, 1:ncol(demo_results)]
 ```
+
+run_de_pipeline outputs
 
 `volcano_plots`: visualization of the filtered results on a volcano plot
 
@@ -335,5 +376,11 @@ covid19_ds1_analysis$ora_down_raw$enrichgo_visuals$`healthy-covid19`
 ```
 
 # Future Work
+
+Implement GSEA
+
+Protein-Protein Interaction Network
+
+New ORA visuals: Radial Upset Plot, ORA network visual for centrality.
 
 # Citations
