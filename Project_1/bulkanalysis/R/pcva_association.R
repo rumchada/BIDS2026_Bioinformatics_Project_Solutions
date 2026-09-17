@@ -14,6 +14,10 @@
 #' and after batch correction to evaluate whether experimental, biological,
 #' or technical variables explain major sources of variation in the dataset.
 #'
+#'
+#'
+#'@param bulk_ds object containing normalized or appropriately transformed expression data and corresponding sample metadata.
+#'
 #' @details
 #' INPUT:
 #'
@@ -42,7 +46,7 @@
 #' @importFrom pheatmap pheatmap
 #' @importFrom SummarizedExperiment assay
 #' @importFrom matrixStats rowVars
-#' @importFrom stats prcomp lm summary aov
+#' @importFrom stats prcomp lm aov
 #'
 #'
 #' @seealso
@@ -53,7 +57,9 @@
 #'
 #' @export
 pc_var_association <- function(bulk_ds){
-  library(pheatmap)
+
+
+  #library(pheatmap)
   vst_mat <- assay(bulk_ds, "var_stable")
   #Select top variable gene
   top_var_genes <- head(order(rowVars(vst_mat), decreasing = TRUE), 2000)

@@ -9,11 +9,13 @@
 #'@aliases ora_enrichgo
 #'
 #'
-#'@param results list of tables or a table of differential expression results
+#'@param filtered_results list of tables or a table of differential expression results
 #'
 #'@param direction Which direction +log2fc -log2fc should be looked at ? e.g. \code{"up"}, \code{"down"}
 #'
-#'@param pval_thesh after running fisher exact test for ORA, what should the distribution of pvalues be?
+#'@param log2fc_thresh what is log2FC cutoff you would want for the analysis
+#'
+#'@param pval_thresh after running fisher exact test for ORA, what should the distribution of pvalues be?
 #'
 #'@param top_terms How many resulting terms should be display in the visuals.
 #'

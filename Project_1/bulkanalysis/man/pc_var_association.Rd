@@ -6,6 +6,9 @@
 \usage{
 pc_var_association(bulk_ds)
 }
+\arguments{
+\item{bulk_ds}{object containing normalized or appropriately transformed expression data and corresponding sample metadata.}
+}
 \value{
 A matrix containing p-values representing the association between each
 metadata variable and each principal component. The matrix has principal

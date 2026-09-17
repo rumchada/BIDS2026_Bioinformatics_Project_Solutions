@@ -55,11 +55,13 @@ run_de_pipeline <- function(dds_object,
 
                             ensembl_dataset = "hsapiens_gene_ensembl") {
 
-  require(glue)
-  require(clusterProfiler)
-  require(ggplot2)
-  require(AnnotationDbi)
-  require(DESeq2)
+  #require(glue)
+  #require(clusterProfiler)
+  #require(ggplot2)
+  #require(AnnotationDbi)
+  #require(DESeq2)
+
+
   #save vector the length of the edgeR results with comparisons
   diffexp_results <- vector("list", length(edgeR_results))
   names(diffexp_results) <- names(edgeR_results)

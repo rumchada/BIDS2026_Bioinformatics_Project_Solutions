@@ -8,13 +8,13 @@
 #' @param dds_object A formatted DESeq2 object where each sample and its
 #'   counts are aligned with the respective metadata in `@colData`.
 #'
-#' @param condition The name of the condition column in the metadata
+#' @param condition_col The name of the condition column in the metadata
 #'   table in `colData`.
 #'
-#' @param reference_group_name The name of the control group to compare
+#' @param ref_group_name The name of the control group to compare
 #'   against for each comparison. For example, `"healthy"` or `"control"`.
 #'
-#' @param initial_pvalue_cutoff The initial p-value cutoff used for
+#' @param init_pvalue_cutoff The initial p-value cutoff used for
 #'   filtering.
 #'
 #'  @param adjust.method choose a method of pval correct Family Wise Error Rate reccomended
@@ -55,11 +55,13 @@
 #' * `Q-value (FDR)`: The proportion of false positives after accounting
 #'   for multiple testing.
 #'
-#' @importFrom edgeR DGEList filterByExpr calcNormFactors estimateDisp glmQLFit glmQLFTest topTags
+#' @importFrom edgeR DGEList filterByExpr calcNormFactors estimateDisp glmQLFit glmQLFTest topTags normLibSizes
 #' @importFrom limma makeContrasts
 #' @importFrom glue glue
 #' @importFrom tibble rownames_to_column
 #' @importFrom dplyr rename_with any_of
+#' @importFrom stats dist hclust model.matrix p.adjust relevel setNames
+#' @importFrom utils combn head
 #'@export
 
 
@@ -81,7 +83,7 @@ edgeR_diffexp <- function(dds_object,
   keep <- filterByExpr(y)
   y <- y[keep, , keep.lib.sizes=FALSE]
   #Performs TMM Normalization, Corrects for systemic biases between samples.
-  y <- calcNormFactors(y)
+  y <- normLibSizes(y)
 
   # reaffirm healthy as level reference
   y$samples$condition <- relevel(
@@ -96,7 +98,7 @@ edgeR_diffexp <- function(dds_object,
   design <- model.matrix(~0+condition, data = y$samples)
   conds <- gsub("^condition", "", colnames(design))
 
-  contrast_strings <- combn(conds, 2, FUN = function(x) paste0(x[1], "-", x[2]))
+  contrast_strings <- utils::combn(conds, 2, FUN = function(x) paste0(x[1], "-", x[2]))
 
 
   contrast_strings
@@ -126,7 +128,7 @@ edgeR_diffexp <- function(dds_object,
 
     results[[colnames(my.contrasts)[i]]] <-
       # TopTags function for logFC
-      topTags(qlf, n = nrow(y), p.value = init_pval_cutoff, adjust.method = 'bonferroni')$table %>%
+      topTags(qlf, n = nrow(y), p.value = init_pval_cutoff, adjust.method = adjust.method)$table %>%
       as.data.frame() %>%
       tibble::rownames_to_column("geneid") %>%
       dplyr::rename_with( ~ "log2foldchange", .cols = "logFC") %>%

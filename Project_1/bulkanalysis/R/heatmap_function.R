@@ -71,9 +71,9 @@ heatmap_function <- function(initial_table,
                              ensembl_dataset = "hsapiens_gene_ensembl",
                              orgdb = org.Hs.eg.db) {
 
-  require(colorRamp2)
-  require(ComplexHeatmap)
-  require(circlize)
+  #require(colorRamp2)
+  #require(ComplexHeatmap)
+ #require(circlize)
 
   # Initialize the list to store heatmap objects
   heatmap_list <- list()

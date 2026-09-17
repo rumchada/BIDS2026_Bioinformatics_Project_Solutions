@@ -16,7 +16,13 @@ ora_enrichgo(
 )
 }
 \arguments{
+\item{filtered_results}{list of tables or a table of differential expression results}
+
 \item{direction}{Which direction +log2fc -log2fc should be looked at ? e.g. \code{"up"}, \code{"down"}}
+
+\item{log2fc_thresh}{what is log2FC cutoff you would want for the analysis}
+
+\item{pval_thresh}{after running fisher exact test for ORA, what should the distribution of pvalues be?}
 
 \item{top_terms}{How many resulting terms should be display in the visuals.}
 
@@ -27,10 +33,6 @@ https://bioconductor.org/packages/3.23/data/annotation/.}
 \item{keyType}{which type of geneid are being entered into the cluster}
 
 \item{ont}{which ontological DB will you be using ? options \code{c("BP", "CC", "MF")}}
-
-\item{results}{list of tables or a table of differential expression results}
-
-\item{pval_thesh}{after running fisher exact test for ORA, what should the distribution of pvalues be?}
 }
 \value{
 A list containing:

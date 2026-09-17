@@ -54,12 +54,11 @@ Check meta data for which groups you would like set the comparisons to.
 
 ```{r}
 #checking if path exists
-library(vroom)
 path <- "./GSE202805/GSE202805_genecounts_20220406.txt.gz"
 
-counts <- read.delim(gzfile(path))
+counts <- utils::read.delim(gzfile(path))
 
-colnames(counts) <- sub("\\.bam$", "", colnames(counts))
+colnames(counts) <- base::sub("\\.bam$", "", colnames(counts))
 #Some dataset will still come with the sorted bam file that outputs from command line functions such as featureCounts (subread)
 counts <- counts %>% dplyr::select(-c(Chr, Start, End, Strand, Length))
 # contains the count vecotrs of the 81 samples
@@ -159,6 +158,11 @@ assays(covid19_ds1)[[3]] <- log10(covid19_ds1@assays@data$counts + 1)
 assayNames(covid19_ds1)[3] <- "log_counts"
 ```
 
+```{r}
+# saveRDS does not work in the vignette build
+#saveRDS(covid19_ds1,"./vignette_data/gse202805_test_data.rds")
+```
+
 Necessary QC is required please check other resources for bulk RNA-Seq QC tutorial and rationale
 
 ### Bulk Analysis Demonstration
@@ -193,7 +197,7 @@ Result is the list of valid binary comparisons within the data using EdgeR.
 See the `edgeR_diffexp()` documentation for more details \code{\link{edgeR_diffexp}}
 
 ```{r}
-results_dds1
+results_dds1$`healthy-convalescent`
 ```
 
 **Running the whole DE Downstream pipeline**

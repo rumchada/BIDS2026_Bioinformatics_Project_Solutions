@@ -59,17 +59,15 @@
 #' @importFrom umap umap
 #' @importFrom stats prcomp
 #' @importFrom matrixStats rowVars
-#' @importFrom SummarizedExperiment assays colData assay
+#' @importFrom SummarizedExperiment assays colData
+#' @importFrom RNAseqQC plot_sample_clustering plot_pca
+#' @importFrom utils head
 #'
 #'
 #'@export
 baseline_dimreduction <- function(bulk_dataset,
                                   top_var = 2000,
                                   grouping = NA){
-
-  library(ggplot2)
-  require(umap)
-  require(prcomp)
 
   if (!is.na(grouping) && is.character(grouping)) {
     if (!grouping %in% colnames(colData(bulk_dataset))) {
@@ -86,18 +84,18 @@ baseline_dimreduction <- function(bulk_dataset,
 
 
   #prioritize variance stable assay within the bulk_dataset
-  assays(bulk_dataset) <- assays(bulk_dataset)[c("var_stable", "counts", "log_counts")]
+  SummarizedExperiment::assays(bulk_dataset) <- SummarizedExperiment::assays(bulk_dataset)[c("var_stable", "counts", "log_counts")]
   # takes the euclidan distance of a variance stabilized dataset
   # row by row euclidean distance against each other
   # plots the visual distance between each sample onto heatmap
-  distance_plot <- plot_sample_clustering(bulk_dataset, anno_vars = anno_variable, distance = "euclidean")
+  distance_plot <- RNAseqQC::plot_sample_clustering(bulk_dataset, anno_vars = anno_variable, distance = "euclidean")
 
 
   #____Extracting Top Variable Gene per sample -----#
   # Setting Variance Stable Counts as Priority Assay
   vst_mat <- assay(bulk_dataset, "var_stable")
   #Select top variable gene
-  top_var_genes <- head(order(rowVars(vst_mat), decreasing = TRUE), top_var)
+  top_var_genes <- utils::head(order(rowVars(vst_mat), decreasing = TRUE), top_var)
   vst_top <- vst_mat[top_var_genes, ]
   # Run PCA via R
   # Remember PCA is taking the right unitary martrix (VT) (feature space) of SVD
@@ -108,7 +106,7 @@ baseline_dimreduction <- function(bulk_dataset,
 
 
   # Plotting first two PCAs
-  pca_plot <- plot_pca(bulk_dataset, PC_x = 1, PC_y = 2, color_by = color_variable)
+  pca_plot <- RNAseqQC::plot_pca(bulk_dataset, PC_x = 1, PC_y = 2, color_by = color_variable)
 
 
 

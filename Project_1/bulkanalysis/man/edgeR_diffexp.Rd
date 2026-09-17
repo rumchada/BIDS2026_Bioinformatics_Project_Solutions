@@ -16,13 +16,13 @@ edgeR_diffexp(
 \item{dds_object}{A formatted DESeq2 object where each sample and its
 counts are aligned with the respective metadata in \verb{@colData}.}
 
-\item{condition}{The name of the condition column in the metadata
+\item{condition_col}{The name of the condition column in the metadata
 table in \code{colData}.}
 
-\item{reference_group_name}{The name of the control group to compare
+\item{ref_group_name}{The name of the control group to compare
 against for each comparison. For example, \code{"healthy"} or \code{"control"}.}
 
-\item{initial_pvalue_cutoff}{The initial p-value cutoff used for
+\item{init_pvalue_cutoff}{The initial p-value cutoff used for
 filtering.
 
 @param adjust.method choose a method of pval correct Family Wise Error Rate reccomended}

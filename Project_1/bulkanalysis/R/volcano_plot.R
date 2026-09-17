@@ -24,8 +24,6 @@
 #'
 #' @param step Numeric value specifying the interval between x-axis ticks.
 #'
-#' @param dot_size Numeric value specifying the size of points in the
-#'   volcano plot.
 #'
 #' @return A list containing:
 #'   \itemize{

@@ -30,13 +30,23 @@ Imports:
     limma,
     magrittr,
     matrixStats,
-    org.Hs.eg.db,
     pheatmap,
     scales,
     SummarizedExperiment,
     tibble,
-    umap
+    umap,
+    RNAseqQC
 Suggests: 
     knitr,
-    rmarkdown
+    rmarkdown,
+    testthat (>= 3.0.0),
+    vroom,
+    GEOquery,
+    data.table,
+    tidyverse,
+    stringr,
+    readr,
+    utils,
+    base
 VignetteBuilder: knitr
+Config/testthat/edition: 3

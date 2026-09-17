@@ -19,6 +19,9 @@ run_de_pipeline(
 )
 }
 \arguments{
+\item{dds_object}{A formatted DESeq2 object where each sample and its
+counts are aligned with the respective metadata in \verb{@colData}.}
+
 \item{edgeR_results}{dataframe of log2fc results from edge}
 
 \item{deg_log2fc_thresh}{absolute value cutoff of log2fc}

@@ -48,8 +48,7 @@ gene_id_converter_ver2 <- function(vector,
                                    from_type,
                                    to_type,
                                    org_db,
-                                   ensembl_datset){
-  require(biomaRt)
+                                   ensembl_dataset){
   # geneid pulling for correct attribute
   id_map <- c(
     ensembl = "ensembl_gene_id",

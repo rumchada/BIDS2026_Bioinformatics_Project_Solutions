@@ -1,0 +1,151 @@
+---
+title: "testing_rmd"
+output: html_document
+date: "2026-09-15"
+---
+
+```{r}
+library(bulkanalysis)
+library(testthat)
+```
+
+EdgeR Function Testing
+
+```{r}
+library(DESeq2)
+library(RNAseqQC)
+```
+
+```{r}
+source("../R/edgeR_diffexp.R")
+
+cnt_matrix <- readr::read_tsv("./test_data/count_matrix.tsv")
+
+colnames(cnt_matrix) <- sub("\\.bam$", "", colnames(cnt_matrix))
+
+colnames(cnt_matrix)[[1]] <- "GeneID"
+
+cnt_matrix <- cnt_matrix %>% tibble::column_to_rownames(var = "GeneID") %>% as.matrix()
+
+#making fake meta_data
+meta_data <- tibble(sample_name = colnames(cnt_matrix), condition = c("CONTROL", "CONTROL", "DISEASE", "DISEASE")) 
+meta_data <- meta_data %>% tibble::column_to_rownames(var = "sample_name")
+
+# Unflitered Counts Saved to a DeSeqDataSet (dds object)
+fake_ds1 <- make_dds(counts = cnt_matrix, metadata = meta_data, ah_record = "AH116291")
+#renaming counts to raw counts
+assayNames(fake_ds1)[1] <- "counts"
+
+#variance stabilized Raw counts
+# since our test data set is ver small we have to use a small nsub varibale
+nsb = sum(rowMeans(counts(fake_ds1)) > 5)
+
+assays(fake_ds1)[[2]] <- vst(fake_ds1@assays@data$counts, nsub = nsb)
+assayNames(fake_ds1)[2] <- "var_stable"
+#log_transformed (log normalized counts)
+assays(fake_ds1)[[3]] <- log10(fake_ds1@assays@data$counts + 1)
+assayNames(fake_ds1)[3] <- "log_counts"
+
+#saving the DDS object as an rd object
+saveRDS(fake_ds1, "./test_data/fake_dds.rds")
+```
+
+```{r}
+library(testthat)
+source("../R/edgeR_diffexp.R")
+
+
+dds_object <- fake_ds1
+#Add the condition column name
+condition_col = "condition"
+#set a refreence group name
+ref_group_name = "CONTROL"
+
+
+#Performs inital differential expression on your DDS Object's raw counts dataframe
+# The use give the condition column from the metadata to make the test parameters
+# and the control group
+
+#"correct instance"
+results_dds1 <- edgeR_diffexp(dds_object, 
+                              condition_col,  
+                              ref_group_name,
+                              init_pval_cutoff = 2,
+                              adjust.method = "bonferroni")
+
+# some data is total shit: When it has no pvalues with
+```
+
+```{r}
+results_dds1
+```
+
+Testing for Input Errors
+
+Testing for valid:
+
+Invalid Object input,
+
+condition column input,
+
+ref_group_name,
+
+valid pvalue adjust.method
+
+```{r}
+library(testthat)
+
+#Input esting
+test_that(
+  "pvalue_input validations",{
+    
+    invalid_pvalues <- c(NA, "0.05")
+    
+    for (i in invalid_pvalues){
+    # pvalue check
+    expect_error(
+      edgeR_diffexp(
+        dds_object = dds_object,
+        condition_col = condition_col,
+        ref_group_name = ref_group_name,
+        init_pval_cutoff = i
+      )
+    )}#end of loop
+    
+  })#end of test_that function
+
+test_that(
+  #condition column test
+  "expect error for failed column name", {
+  expect_error(
+    edgeR_diffexp(
+      dds_object = dds_object,
+      condition_col = "fake_column",
+      ref_group_name = ref_group_name,
+      init_pval_cutoff = 0.5,
+      adjust.method = "bonferroni"
+    ) 
+  )# end of internal test
+})
+
+
+#expecting invalid p.adjust method
+test_that(
+  "valid p.adjust methods",{
+    valid_p.adjust_method <- c("bonferroni","BH")
+    for(i in valid_p.adjust_method)
+      expect_no_error(
+        edgeR_diffexp(
+          dds_object = dds_object,
+          condition_col = condition_col,
+          ref_group_name = ref_group_name,
+          init_pval_cutoff = 0.5,
+          adjust.method = i
+        ) 
+      )
+  })
+```
+
+```{r}
+test_that("test_1",{expect_error()}, "test_2",{expect_no_error()})
+```

@@ -31,9 +31,6 @@ x-axis. Should be less than 0. For example, \code{-5}.}
 x-axis. Should be greater than 0. For example, \code{5}.}
 
 \item{step}{Numeric value specifying the interval between x-axis ticks.}
-
-\item{dot_size}{Numeric value specifying the size of points in the
-volcano plot.}
 }
 \value{
 A list containing:

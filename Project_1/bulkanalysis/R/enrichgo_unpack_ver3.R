@@ -71,9 +71,6 @@ enrichgo_unpack_ver3 <- function(
                       ensembl_dataset = "hsapiens_gene_ensembl"){
 
 
-  require(tibble)
-  require(dplyr)
-
   ### helper functionf or converting geneidA to geneidB
   ### user
   gene_id_converter_ver2 <- function(vector,
@@ -81,7 +78,7 @@ enrichgo_unpack_ver3 <- function(
                                      to_type,
                                      org_db,
                                      ensembl_datset){
-    require(biomaRt)
+
     # geneid pulling for correct attribute
     id_map <- c(
       ensembl = "ensembl_gene_id",
