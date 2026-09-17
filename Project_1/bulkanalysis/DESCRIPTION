@@ -46,6 +46,7 @@ Suggests:
     stringr,
     readr,
     utils,
+    glue
     base
 VignetteBuilder: knitr
 Config/testthat/edition: 3

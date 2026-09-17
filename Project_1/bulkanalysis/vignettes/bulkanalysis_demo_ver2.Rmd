@@ -10,7 +10,11 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.align = "center",
+  fig.width = 12,
+  fig.height = 10,
+  out.width = "100%"
 )
 ```
 
@@ -18,15 +22,33 @@ knitr::opts_chunk$set(
 library(bulkanalysis)
 ```
 
+# Introduction
+
+The purpose of the bulkanalysis package is to streamline the downstream analysis of bulk RNA-seq data by providing a collection of commonly used analysis and visualizations in a single package. The package was developed as a wrapper around statistical and visualization methods that I have frequently encountered during my experience analyzing bulk RNA-seq data. Rather than introducing new statistical methods, bulkanalysis is designed to reduce repetitive coding and provide a consistent workflow for obtaining commonly used downstream results. This package performs techniques such as differential expression via [edgeR](https://web.stanford.edu/class/bios221/labs/rnaseq/lab_4_rnaseq.html) with traditional outputs such as heatmaps, volcano plots. As well as over-representation analysis via [clusterProfiler](https://yulab-smu.top/biomedical-knowledge-mining-book/enrichplot.html) using [Fishcher's Exact Test](https://www.youtube.com/watch?v=udyAvvaMjfM) with summarized output visuals (As of 9/17/26).
+
+The raw results and output visuals are accessible by either executing the individual functions or through the `bulkanalysis::run_de_pipeline()}`'s nested list output.This vignette below will go into detail on the inputs necessary for the `bulkanalysis::run_de_pipeline()` and the outputs of functions. The overall goal of this package is to save time on initial biological inferences of bulk-RNAseq experiments by cutting out repetitive coding, visualization building, and parsing through large noise of large statistical results. Delivering summarized results for faster interpretations of your data. By combining these steps into reusable functions, the package provides summarized results that can be used to more efficiently explore potential biological patterns in the data. These results are intended to support initial biological interpretation rather than replace more comprehensive statistical or biological investigation.
+
+Input Data First we need to format a random bulk-RNAseq dataset that has been pre-processed (from FASTQ files), but unnormalized counts to enter into a [DESeqDataSet](https://www.rdocumentation.org/packages/RNAseqQC/versions/0.2.1/topics/make_dds) via `RNAseqQC::make_dds()`. This is because make_dds() does not accept continuous counts. Which requires at minimum a count matrix in the `matrix` class from base-r and meta-data table with following columns:
+
+`sample_names`: The names of the samples of your bulk-RNAseq experiment in the same exact arrangement and character format (capitlaize/lower_case).
+
+`sample_condition`: which tells the experimental condition of your samples.
+
+These inputs can then be provided to `bulkanalysis::edgeR_diffexp()` to perform pairwise differential expression analysis between experimental conditions. A reference condition is specified so that the resulting comparisons are interpreted relative to a defined baseline. In many experiments, this reference may be a condition such as control or healthy, although the appropriate reference depends on the experimental design.
+
 # Bulk-RNASeq Formatting
 
-The purpose is to show how to prepare a random dataset from [GEO Query](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE133432) for the bulk-analysis package. GEO202805 will be used to prepare a Deseq2dataset object compatable with the rest of functions in the bulk analysis package.
+This section will show you how to prepare a random dataset from [GEO Query](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE202805) for the bulkanalysis package functions. GEO202805 will be used to prepare a DESeqDataSet object compatible with the rest of functions in the bulk analysis package.
 
 **GEO202805 Summary**
 
-RNA sequencing was performed on a total of 80 PBMC samples derived from healthy controls (n = 10), acute-Mild (n = 4), Acute-Moderate (n = 6), Acute-Severe (n = 32) and Convalescent = 28
+RNA sequencing was performed on a total of 80 PBMC samples derived from healthy controls (n = 10), acute-Mild (n = 4), Acute-Moderate (n = 6), Acute-Severe (n = 32) and Convalescent = 28. For this
 
-```{r}
+**Citation**: Minghan,.L , Yuqing,.S, Yizhou,.T, Yuefan,.L, Weidong,.T, " Global Transcriptomic analysis of PBMC derived from COVID-19 acute-severe patients and convalescents", (May, 2022),PRJNA837285; GEO: GSE202805.
+
+### Downloading GEOquery Data
+
+```{r, message=FALSE}
 library(GEOquery)
 #read in the whole count matrices and meta data
 
@@ -43,14 +65,14 @@ expr_202805 <- exprs(gse_202805)
 #meta-data
 meta_202805 <- pData(gse_202805)
 
-
-head(expr_202805)
-head(meta_202805)
+#showing first five rows of the meta-data and the expression samples
+head(expr_202805, n = 5)
+head(meta_202805, n = 5)
 #download the data into the data directory
 getGEOSuppFiles("GSE202805")
 ```
 
-Check meta data for which groups you would like set the comparisons to.
+Check meta data for which groups you would like set the comparisons to.For this demonstration we will be binning the all the acute covid-19 samples (mild, moderate, severe). In your metadata, you can partition each of these labels in a more granular fashion.
 
 ```{r}
 #checking if path exists
@@ -60,16 +82,17 @@ counts <- utils::read.delim(gzfile(path))
 
 colnames(counts) <- base::sub("\\.bam$", "", colnames(counts))
 #Some dataset will still come with the sorted bam file that outputs from command line functions such as featureCounts (subread)
+#The columns being deleted are not necessary unless we are integrating ChIP or ATAC data.
 counts <- counts %>% dplyr::select(-c(Chr, Start, End, Strand, Length))
-# contains the count vecotrs of the 81 samples
-counts 
+# contains the count vectors of the 8 samples
+counts %>% head(n = 10)
 #Some dataset will still come with the sorted bam file that outputs from command line functions such as featureCounts (subread)
 
 ```
 
-Some datasets will still come within the sorted bam file that outputs from command line functions such as featureCounts (subread). In case that happens use the select(-c()) to get rid of columns such as Chr, Start, End, Strand, Length. Which useful if you have epigenomic data such as ChIP or ATAC data. However we will have to use tidyverse on the metadata table to only the relevant columns
+Some datasets will still come within the sorted bam file that outputs from command line functions such as featureCounts (subread). In case that happens use the select(-c()) to get rid of columns such as Chr, Start, End, Strand, Length. Which useful if you have epigenomic data such as ChIP or ATAC data. However we will have to use tidyverse on the metadata table to only the basic relevant columns.
 
-Meta-Data Editing
+# Meta-Data Editing
 
 ```{r}
 library(data.table)
@@ -78,7 +101,7 @@ library(stringr)
 
 
 meta_data <- meta_202805
-meta_data
+
 meta_data <- meta_data %>%
   rownames_to_column(var = "samples") %>%
   dplyr::select(samples, title, characteristics_ch1) %>%
@@ -115,6 +138,7 @@ metadata <- data.frame(
 ) %>% dplyr::slice(., 2:nrow(.)) %>%
   dplyr::mutate(condition = as.factor(condition)) %>%
   dplyr::mutate(sample = as.factor(sample))
+
 ```
 
 ```{r}
@@ -131,11 +155,23 @@ metadata[] <- lapply(metadata, factor)
 ```
 
 ```{r}
-counts
-metadata
+counts %>% head(n = 10)
+metadata %>% head(n = 10)
 ```
 
-### Making DDS Object
+# Making DDS Object
+
+make_dds(): Make DESeqDataSet from counts matrix and metadata.
+
+Per transcript counts of RNA-seq exhibit a mean-variance relationship ([hetroscedastic](https://www.biostars.org/p/9587730/)). However many tests within RNA-seq pipeline require non-hetroscedastic data. Normalizations are require to smooth the variation of the data. [Normalization](https://hbctraining.github.io/DGE_workshop/lessons/02_DGE_count_normalization.html) scales the raw count of values to account for the technical batch effects between samples. This way expression level are comparable between and within samples.
+
+**`vst()` (wrapper for `DESeq2::varianceStabilizingTransformation()`)**: variance stabilizing transformation transforms normalizes count data to reduce the dependence between the mean and variance. This produces an approximately homoscedastic representation of the data, making it more appropriate for exploratory analyses based on distances or correlations, such as PCA and clustering. The transformed values are intended for exploratory analysis and visualization rather than differential-expression testing.The result is applied to the `bulkanalysis::baseline_dimreduction()` function.
+
+**Log normalization**: The typical distribution of bulk-RNAseq data follows a Poisson (Var = mean) or a Negative Binomial Distribution (Var \> Mean) For data containing a large amount of zeros, the log transformation serves to minimize the frequency of zeroes relative to transcripts with counts \>= 1. This will help to visualize the data though a normal distribution. This is typcial are typical for scRNA-Seq and ST data. To avoid taking the log of 0, it is common to add a +1 pseudo value.
+
+More information of [Normalization](https://www.youtube.com/watch?v=u3395drEfrs&list=PLg0JKLUfmkdkIr-9hvFLY1O1JRqOdjTSW)
+
+**Note**: These transformations are not used within the differential expression analysis. This is because packages such as EdgeR and DESeq2 are built to take into account for the typical Poisson or Negative Binomial distribution.
 
 ```{r}
 
@@ -163,9 +199,9 @@ assayNames(covid19_ds1)[3] <- "log_counts"
 #saveRDS(covid19_ds1,"./vignette_data/gse202805_test_data.rds")
 ```
 
-Necessary QC is required please check other resources for bulk RNA-Seq QC tutorial and rationale
+# Bulk Analysis Demonstration
 
-### Bulk Analysis Demonstration
+standardization of meta-data labels.
 
 ```{r}
 # In some scenarios, you will need to standardize your condition
@@ -173,6 +209,8 @@ covid19_ds1@colData$condition <- covid19_ds1@colData$condition %>% tolower()
 ```
 
 ### Edge R Based Differential Expression
+
+NEED A DESCRIPTION FROM THE DOCUMENTATION AND CITATIONS
 
 ```{r}
 dds_object <- covid19_ds1
@@ -194,17 +232,44 @@ results_dds1 <- edgeR_diffexp(covid19_ds1,
 
 Result is the list of valid binary comparisons within the data using EdgeR.
 
-See the `edgeR_diffexp()` documentation for more details \code{\link{edgeR_diffexp}}
+See the `edgeR_diffexp()` documentation for more details.
 
 ```{r}
 results_dds1$`healthy-convalescent`
+
 ```
 
-**Running the whole DE Downstream pipeline**
+# **Running the whole DE Downstream pipeline**
 
 Inputs: the DDS object, Results of the EdgeR Differential Expression analysis
 
-Outputs:
+Arguments:
+
+- `dds_object`:A formatted DESeq2 object where each sample and its counts are aligned with the respective metadata in `@colData`.
+
+- `edgeR_results`: A dataframe of differential expression results (minimum columns: log2fc, pvalue, p.adjust) **DEG statisitcal inputs**
+
+- `deg_log2fc_thresh`: absolute value cutoff of log2fc
+
+- `deg_pval_adj_thresh`: pvalue cutoff for initial log2fc values
+
+**Volcano Plots Arguments**
+
+- `vol_plot_lower_xlim`: Numeric value specifying the lower limit of the x-axis. Should be less than 0. For example, `-5`.
+
+- `vol_plot_upper_xlim`: Numeric value specifying the upper limit of the x-axis. Should be greater than 0. For example, `5`.
+
+- `cartesian_step`: Numeric value specifying the interval between x-axis ticks.
+
+**ORA Arguments**
+
+- `ora_pval_adj_threshold`: pvalue cutoff of the over-representation test
+
+- `ora_convert_ids`: Boolean option to convert the gene IDs from Ensemble to External format
+
+- `orgdb`: An organism-specific annotation database used to facilitate gene identifier conversion, such as org.Hs.eg.db for human or org.Mm.eg.db for Mus Musculous.
+
+- `ensembl_dataset`: Character string specifying the Ensembl dataset used for annotation. For example, `"hsapiens_gene_ensembl"` for human genes.
 
 ```{r}
 library(org.Hs.eg.db)
@@ -222,21 +287,53 @@ covid19_ds1_analysis <- run_de_pipeline(
                               )
 ```
 
-## Volcano Plot
+## Outputs
+
+The outputs of the run_de_pipeline are described below
+
+`filtered_results`: The initial filtered result of DEGs log2fc and pval_adj_threshold
 
 ```{r}
+library(glue)
+demo_results <-covid19_ds1_analysis$filtered_results$`healthy-covid19`
+
+glue("Total DEGs in healthy vs covid-19 comparison: {dim(demo_results)[1]}")
+
+demo_results %>% head(n = 5)
+```
+
+`volcano_plots`: visualization of the filtered results on a volcano plot
+
+`heatmap`:
+
+`ora_up_raw`: Result of the over-representation analysis on upregulated DEGs via clusterProfiler `unpacked_results_up`: unpacked results table consisting of a nested list of ORA results on the upregulated DEGs
+
+`ora_down_raw`: Result of the over-represenation analysis on downregulated DEGs via clusterProfiler `unpacked_results_down`: unpacked results table consisting of a nested list of ORA results on the down-regulated DEGs
+
+## Volcano Plot
+
+Uses ComplexHeatMap to compare z-scaled expression of DEGs within the filtered results
+
+```{r, fig.height = 7, fig.width=10, dpi = 300}
 covid19_ds1_analysis$volcano_plots$`healthy-covid19`
 ```
 
 ### Heatmaps
 
-```{r}
+Uses ComplexHeatMap to compare z-scaled expression of DEGs from the filtered results table.
+
+```{r, fig.height = 10, fig.width = 7, dpi=300}
 covid19_ds1_analysis$heatmap$`healthy-covid19`
 ```
 
 ### ORA DotPlot Summary for Up Regulated and DownRegulated DEGs
 
-```{r}
-covid19_ds1_analysis$ora_up_raw$enrichgo_visuals$`healthy-covid19`
+Summarizes the the statistical significance and the count of each DEG in an over-represented term.
+
+```{r, fig.height = 5, fig.width = 10, dpi=300}
 covid19_ds1_analysis$ora_down_raw$enrichgo_visuals$`healthy-covid19`
 ```
+
+# Future Work
+
+# Citations
