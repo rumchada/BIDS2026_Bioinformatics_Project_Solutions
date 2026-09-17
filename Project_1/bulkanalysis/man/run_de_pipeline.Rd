@@ -26,6 +26,8 @@ counts are aligned with the respective metadata in \verb{@colData}.}
 
 \item{deg_log2fc_thresh}{absolute value cutoff of log2fc}
 
+\item{deg_pval_adj_thresh}{pvalue cutoff for initial log2fc values}
+
 \item{vol_plot_lower_xlim}{Numeric value specifying the lower limit of the
 x-axis. Should be less than 0. For example, \code{-5}.}
 
@@ -34,7 +36,16 @@ x-axis. Should be greater than 0. For example, \code{5}.}
 
 \item{cartesian_step}{Numeric value specifying the interval between x-axis ticks.}
 
+\item{ora_convert_ids}{Boolean option to convert the gene IDs from Ensemble to External format}
+
 \item{ora_pval_adj_threshold}{pvalue cutoff of the over-representation test}
+
+\item{orgdb}{An organism-specific annotation database used to facilitate gene identifier
+conversion, such as \code{org.Hs.eg.db} for human or
+\code{org.Mm.eg.db} for mouse.}
+
+\item{ensembl_dataset}{Character string specifying the Ensembl dataset used for annotation.
+For example, \code{"hsapiens_gene_ensembl"} for human genes.}
 }
 \value{
 A list of the following objects

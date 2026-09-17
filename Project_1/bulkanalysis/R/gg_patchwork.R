@@ -1,4 +1,3 @@
-#'@export
 #Rendering Patchwork Images bypassing R Windows
 #Helper function used to render the spatial feature plots and bypass RStudip window contrainsts
 gg_patchwork <- function(plot, filename, width = 8, height = 6, dpi = 300, ...) {

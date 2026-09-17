@@ -11,6 +11,8 @@
 #'
 #' @param deg_log2fc_thresh absolute value cutoff of log2fc
 #'
+#' @param deg_pval_adj_thresh pvalue cutoff for initial log2fc values
+#'
 #' @param vol_plot_lower_xlim Numeric value specifying the lower limit of the
 #'   x-axis. Should be less than 0. For example, `-5`.
 #'
@@ -20,6 +22,17 @@
 #' @param cartesian_step Numeric value specifying the interval between x-axis ticks.
 #'
 #' @param ora_pval_adj_threshold pvalue cutoff of the over-representation test
+#'
+#' @param ora_convert_ids Boolean option to convert the gene IDs from Ensemble to External format
+#'
+#' @param orgdb
+#' An organism-specific annotation database used to facilitate gene identifier
+#' conversion, such as \code{org.Hs.eg.db} for human or
+#' \code{org.Mm.eg.db} for mouse.
+#'
+#' @param ensembl_dataset
+#' Character string specifying the Ensembl dataset used for annotation.
+#' For example, \code{"hsapiens_gene_ensembl"} for human genes.
 #'
 #'@return
 #'A list of the following objects

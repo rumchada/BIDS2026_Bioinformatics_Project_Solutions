@@ -14,10 +14,10 @@
 #' @param ref_group_name The name of the control group to compare
 #'   against for each comparison. For example, `"healthy"` or `"control"`.
 #'
-#' @param init_pvalue_cutoff The initial p-value cutoff used for
+#'@param init_pval_cutoff The initial p-value cutoff used for
 #'   filtering.
 #'
-#'  @param adjust.method choose a method of pval correct Family Wise Error Rate reccomended
+#'@param adjust.method choose a method of pval correct Family Wise Error Rate reccomended
 #'
 #' @return A list of data frames containing every possible combination
 #'   of binary comparisons (control vs. experimental group) within your

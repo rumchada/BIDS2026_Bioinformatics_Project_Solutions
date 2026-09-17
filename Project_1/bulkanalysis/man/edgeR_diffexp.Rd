@@ -22,10 +22,10 @@ table in \code{colData}.}
 \item{ref_group_name}{The name of the control group to compare
 against for each comparison. For example, \code{"healthy"} or \code{"control"}.}
 
-\item{init_pvalue_cutoff}{The initial p-value cutoff used for
-filtering.
+\item{init_pval_cutoff}{The initial p-value cutoff used for
+filtering.}
 
-@param adjust.method choose a method of pval correct Family Wise Error Rate reccomended}
+\item{adjust.method}{choose a method of pval correct Family Wise Error Rate reccomended}
 }
 \value{
 A list of data frames containing every possible combination

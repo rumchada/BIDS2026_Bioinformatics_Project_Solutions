@@ -24,7 +24,6 @@ Imports:
     ComplexHeatmap,
     dplyr,
     edgeR,
-    forcats,
     ggplot2,
     glue,
     limma,
