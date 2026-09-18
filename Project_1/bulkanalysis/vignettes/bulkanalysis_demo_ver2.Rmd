@@ -2,7 +2,7 @@
 title: "bulkanalysis_demo"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{bulkanalysis_demo_ver2}
+  %\VignetteIndexEntry{bulkanalysis_demo}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -86,14 +86,15 @@ colnames(counts) <- base::sub("\\.bam$", "", colnames(counts))
 counts <- counts %>% dplyr::select(-c(Chr, Start, End, Strand, Length))
 # contains the count vectors of the 8 samples
 #Some dataset will still come with the sorted bam file that outputs from command line functions such as featureCounts (subread)
-counts[1:10, 1:10]
+#counts[1:10, 1:10]
+knitr::kable(counts[1:10, 1:10])
 ```
 
 Some datasets will still come within the sorted bam file that outputs from command line functions such as featureCounts (subread). In case that happens use the select(-c()) to get rid of columns such as Chr, Start, End, Strand, Length. Which useful if you have genomic (ChIP)or epigenomic (ATAC). However we will have to use tidyverse on the metadata table to only the basic relevant columns.
 
 # Meta-Data Editing
 
-```{r}
+```{r, include = FALSE}
 library(data.table)
 library(tidyverse)
 library(stringr)
@@ -148,14 +149,12 @@ counts <- counts %>%
 
 counts <- counts %>% column_to_rownames(var = "geneid")
 
-
 metadata[] <- lapply(metadata, factor)
 
 ```
 
 ```{r}
-counts[]
-metadata[10, 10]
+knitr::kable(metadata[1:10, 1:ncol(metadata)])
 ```
 
 # Making DDS Object
@@ -172,7 +171,7 @@ More information of [Normalization](https://www.youtube.com/watch?v=u3395drEfrs&
 
 **Note**: These transformations are not used within the differential expression analysis. This is because packages such as EdgeR and DESeq2 are built to take into account for the typical Poisson or Negative Binomial distribution.
 
-```{r}
+```{r, include = FALSE, message = FALSE}
 
 library(DESeq2)
 library(RNAseqQC)
@@ -255,9 +254,7 @@ results_dds1 <- edgeR_diffexp(covid19_ds1,
                               adjust.method = "bonferroni")
 ```
 
-Result is the list of valid binary comparisons within the data using EdgeR.
-
-See the `edgeR_diffexp()` documentation for more details.
+Result is a list of tables with details on the differences of gene expression between genes through each of samples in the count matrix.
 
 ```{r}
 healthy_covid19_results <- results_dds1$`healthy-covid19`
@@ -266,7 +263,7 @@ healthy_covid19_results <- results_dds1$`healthy-covid19`
 ```{r}
 healthy_covid19_results <- results_dds1$`healthy-covid19`
 
-results_dds1$`healthy-convalescent`[1:10, 1:ncol(healthy_covid19_results)]
+knitr::kable(results_dds1$`healthy-convalescent`[1:10, 1:ncol(healthy_covid19_results)])
 
 ```
 
@@ -274,7 +271,7 @@ results_dds1$`healthy-convalescent`[1:10, 1:ncol(healthy_covid19_results)]
 
 Inputs: the DDS object, Results of the EdgeR Differential Expression analysis
 
-Arguments:
+**Arguments:**
 
 - `dds_object`:A formatted DESeq2 object where each sample and its counts are aligned with the respective metadata in `@colData`.
 
@@ -326,22 +323,22 @@ The outputs of the run_de_pipeline are described below
 
 **Columns:**
 
-\`log2FC\`: The log2-scaled fold change of a given gene across the \#' specified samples.
+- \`log2FC\`: The log2-scaled fold change of a given gene across the \#' specified samples.
 
-`P-value`: The probability of obtaining data as extreme as the \#' observed values assuming that the null hypothesis is true.
+- `P-value`: The probability of obtaining data as extreme as the \#' observed values assuming that the null hypothesis is true.
 
-`Q-value (FDR)`: The proportion of false positives after accounting \#' for multiple testing.
+- `Q-value (FDR or FWER)`: The proportion of false positives after accounting \#' for multiple testing.
 
 ```{r}
 library(glue)
 demo_results <-covid19_ds1_analysis$filtered_results$`healthy-covid19`
 
-glue("Total DEGs in healthy vs covid-19 comparison: {dim(demo_results)[1]}")
+knitr::kable(glue("Total DEGs in healthy vs covid-19 comparison: {dim(demo_results)[1]}"))
 
-demo_results[1:10, 1:ncol(demo_results)]
+knitr::kable(demo_results[1:10, 1:ncol(demo_results)])
 ```
 
-run_de_pipeline outputs
+**run_de_pipeline outputs**
 
 `volcano_plots`: visualization of the filtered results on a volcano plot
 
@@ -353,7 +350,7 @@ run_de_pipeline outputs
 
 ## Volcano Plot
 
-Uses ComplexHeatMap to compare z-scaled expression of DEGs within the filtered results
+ScatterPlot that shows the each DEGs importance on a volcano plot (log2FC vs -log10(p.val_adj)) within 1 Comparison.
 
 ```{r, fig.height = 7, fig.width=10, dpi = 300}
 covid19_ds1_analysis$volcano_plots$`healthy-covid19`
@@ -361,7 +358,7 @@ covid19_ds1_analysis$volcano_plots$`healthy-covid19`
 
 ### Heatmaps
 
-Uses ComplexHeatMap to compare z-scaled expression of DEGs from the filtered results table.
+Uses ComplexHeatMap to compare z-scaled expression of DEGs from the filtered results table. By adjusting the dimensions of the R image window, the heatmap can edited so that he words can be either spaced out and edited on photoshop later.
 
 ```{r, fig.height = 10, fig.width = 7, dpi=300}
 covid19_ds1_analysis$heatmap$`healthy-covid19`
@@ -381,6 +378,17 @@ Implement GSEA
 
 Protein-Protein Interaction Network
 
-New ORA visuals: Radial Upset Plot, ORA network visual for centrality.
+New ORA visuals:
+
+- Radial Upset Plot,
+
+- ORA network visual for centrality.
 
 # Citations
+
+1.  Mark D. Robinson, Davis J. McCarthy, Gordon K. Smyth, edgeR: a Bioconductor package for differential expression analysis of digital gene expression data, *Bioinformatics*, Volume 26, Issue 1, January 2010, Pages 139–140, <https://doi.org/10.1093/bioinformatics/btp616>
+2.  Wu T, Hu E, Xu S, Chen M, Guo P, Dai Z, Feng T, Zhou L, Tang W, Zhan L, Fu x, Liu S, Bo X, Yu G (2021).
+    “clusterProfiler 4.0: A universal enrichment tool for interpreting omics data.”
+    *The Innovation*, **2**(3), 100141.[doi:10.1016/j.xinn.2021.100141](https://doi.org/10.1016/j.xinn.2021.100141).
+3.   Love MI, Huber W, Anders S (2014).“Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2.”*Genome Biology*, **15**, 550.[doi:10.1186/s13059-014-0550-8](https://doi.org/10.1186/s13059-014-0550-8).
+4.   Minghan,.L , Yuqing,.S, Yizhou,.T, Yuefan,.L, Weidong,.T, " Global Transcriptomic analysis of PBMC derived from COVID-19 acute-severe patients and convalescents", (May, 2022),PRJNA837285; GEO: GSE202805.
